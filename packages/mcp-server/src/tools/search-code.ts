@@ -1,13 +1,6 @@
-import { exec } from "node:child_process";
-import { promisify } from "node:util";
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-
-const execAsync = promisify(exec);
-
-type RgJson =
-  | { type: "match"; data: { path: { text: string }; line_number: number; lines: { text: string } } }
-  | { type: string; data?: unknown };
+import { searchCode } from "@tda/core";
 
 export function registerSearchCode(server: McpServer, rootDir: string) {
   server.registerTool(
@@ -21,28 +14,20 @@ export function registerSearchCode(server: McpServer, rootDir: string) {
       }),
     },
     async ({ query, glob, maxResults = 20 }) => {
-      const globArg = glob ? `-g ${JSON.stringify(glob)}` : "";
-      const cmd = `rg --json ${globArg} -m ${maxResults} ${JSON.stringify(query)} .`;
       try {
-        const { stdout } = await execAsync(cmd, { cwd: rootDir, maxBuffer: 10 * 1024 * 1024 });
-        const matches = stdout
-          .split("\n")
-          .filter(Boolean)
-          .map((l): RgJson => JSON.parse(l))
-          .filter((j): j is Extract<RgJson, { type: "match" }> => j.type === "match")
-          .map((j) => ({
-            file: j.data.path.text,
-            line: j.data.line_number,
-            text: j.data.lines.text.trim(),
-          }));
-        if (matches.length === 0) {
+        const result = await searchCode({ query, glob, maxResults, cwd: rootDir });
+        if (result.count === 0) {
           return { content: [{ type: "text", text: `未找到匹配：${query}` }] };
         }
-        const text = matches.map((m) => `${m.file}:${m.line}: ${m.text}`).join("\n");
+        const text = result.matches
+          .map((m) => `${m.file}:${m.line}: ${m.text}`)
+          .join("\n");
         return { content: [{ type: "text", text }] };
       } catch (e: any) {
-        if (e.code === 1) return { content: [{ type: "text", text: `未找到匹配：${query}` }] };
-        return { content: [{ type: "text", text: `搜索失败：${e.message}` }], isError: true };
+        return {
+          content: [{ type: "text", text: e.message }],
+          isError: true,
+        };
       }
     }
   );

@@ -26,7 +26,7 @@ export function registerListIssues(server: McpServer) {
     async ({ owner, repo, state = "open", label, limit = 10 }) => {
       const params = new URLSearchParams({ state, per_page: String(limit) });
       if (label) params.set("labels", label);
-      const url = `https://api.github.com/repos/${owner}/${repo}/issues?${params}`;
+      const url = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/issues?${params}`;
       const headers: Record<string, string> = {
         Accept: "application/vnd.github+json",
         "User-Agent": "team-dev-assistant",

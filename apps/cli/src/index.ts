@@ -1,4 +1,4 @@
-import "dotenv/config";
+import "@tda/core/lib/env";
 import { runAgent } from "@tda/core";
 import { executeToolCalls, openAITools } from "@tda/tools";
 import { skillsByName, listSkills } from "@tda/skills";

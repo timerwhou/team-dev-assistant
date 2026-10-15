@@ -13,7 +13,6 @@
   "dependencies": {
     "@tda/core": "workspace:*",
     "@tda/skills": "workspace:*",
-    "@tda/tools": "workspace:*",
-    "dotenv": "^18.0.7"
+    "@tda/tools": "workspace:*"
   }
 }

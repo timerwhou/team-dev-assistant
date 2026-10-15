@@ -1,20 +1,21 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
+import { getMonorepoRoot } from "@tda/core";
 import { defineTool } from "./registry";
 
 export const readFileTool = defineTool({
   name: "read_file",
-  description: "读取项目内的文本文件。只允许读取项目根目录下的文件。",
+  description: "读取项目内的文本文件。只允许读取 monorepo 根目录下的文件。",
   readOnly: true,
   parameters: z.object({
-    path: z.string().describe("相对项目根目录的文件路径"),
+    path: z.string().describe("相对 monorepo 根目录的文件路径，例如 apps/cli/src/index.ts"),
     maxLines: z.number().int().positive().optional().describe("最多读取行数，默认 200"),
   }),
   execute: async ({ path: p, maxLines = 200 }) => {
-    const root = process.env.TDA_ROOT || process.cwd();
+    const root = process.env.TDA_ROOT || getMonorepoRoot();
     const abs = path.resolve(root, p);
-    if (!abs.startsWith(root)) throw new Error("越权：只能读取项目内文件");
+    if (!abs.startsWith(root)) throw new Error(`越权：只能读取 ${root} 下的文件`);
     try {
       const content = await fs.readFile(abs, "utf-8");
       const lines = content.split("\n").slice(0, maxLines);

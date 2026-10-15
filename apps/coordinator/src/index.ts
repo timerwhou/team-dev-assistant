@@ -1,4 +1,4 @@
-import "dotenv/config";
+import "@tda/core/lib/env";
 import { A2AClient } from "@tda/a2a";
 import type { Task } from "@tda/a2a";
 
@@ -44,6 +44,17 @@ async function main() {
   for (const job of jobs) {
     const final = await job.client.waitForCompletion(job.task.id);
     console.log(`\n=== ${job.kind} (${final.status}) ===\n`);
+
+    // 打印所有消息（含失败信息）
+    for (const msg of final.messages) {
+      const text = msg.parts
+        .filter((p): p is { type: "text"; text: string } => p.type === "text")
+        .map((p) => p.text)
+        .join("\n");
+      if (text) console.log(`[${msg.role}] ${text}\n`);
+    }
+
+    // 打印 artifact
     for (const a of final.artifacts) {
       for (const p of a.parts) {
         if (p.type === "text") console.log(p.text);

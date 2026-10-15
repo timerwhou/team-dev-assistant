@@ -1,4 +1,4 @@
-import "dotenv/config";
+import "@tda/core/lib/env";
 import { createA2AServer } from "@tda/a2a";
 import { runAgent } from "@tda/core";
 import { executeToolCalls, openAITools } from "@tda/tools";
