@@ -4,8 +4,14 @@
   "type": "module",
   "scripts": {
     "dev": "pnpm --filter @tda/cli dev",
-    "typecheck": "pnpm -r typecheck",
+    "typecheck": "pnpm -r --no-bail typecheck",
     "verify": "bash scripts/verify.sh",
     "start:all": "bash scripts/dev.sh"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "concurrently": "^10.0.6",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
   }
 }

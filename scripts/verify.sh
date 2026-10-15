@@ -2,10 +2,10 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-echo "==> typecheck"
-pnpm -r typecheck
+echo "==> typecheck 全部包"
+pnpm -r --no-bail typecheck
 
-echo "==> CLI smoke"
+echo "==> CLI 冒烟"
 pnpm --filter @tda/cli dev "/help"
 
 echo "✅ all green"
