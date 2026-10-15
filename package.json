@@ -1,0 +1,11 @@
+{
+  "name": "team-dev-assistant",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "pnpm --filter @tda/cli dev",
+    "typecheck": "pnpm -r typecheck",
+    "verify": "bash scripts/verify.sh",
+    "start:all": "bash scripts/dev.sh"
+  }
+}
