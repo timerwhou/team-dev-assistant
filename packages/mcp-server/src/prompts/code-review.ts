@@ -6,10 +6,10 @@ export function registerCodeReviewPrompt(server: McpServer) {
     "code_review",
     {
       description: "资深代码评审：给出结论、问题清单、评分",
-      argsSchema: z.object({
+      argsSchema: {
         code: z.string().describe("要评审的代码或文件路径"),
         language: z.string().optional().describe("语言，默认 typescript"),
-      }),
+      },
     },
     ({ code, language = "typescript" }) => ({
       messages: [

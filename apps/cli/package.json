@@ -9,5 +9,11 @@
   "devDependencies": {
     "tsx": "^4.23.15",
     "typescript": "^7.0.2"
+  },
+  "dependencies": {
+    "@tda/core": "workspace:*",
+    "@tda/skills": "workspace:*",
+    "@tda/tools": "workspace:*",
+    "dotenv": "^18.0.7"
   }
 }
