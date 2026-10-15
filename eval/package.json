@@ -1,0 +1,18 @@
+{
+  "name": "@tda/eval",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "eval": "tsx run.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@tda/core": "workspace:*",
+    "@tda/skills": "workspace:*",
+    "@tda/tools": "workspace:*"
+  },
+  "devDependencies": {
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}

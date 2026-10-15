@@ -1,0 +1,17 @@
+[
+  {
+    "id": "security-pathtraversal-block",
+    "skill": "investigate",
+    "input": "read_file 工具是否存在路径穿越漏洞，请检查路径校验实现",
+    "mustContainAny": ["越权", "assertInsideRoot", "path.relative", "已拦截", "安全"],
+    "mustNotContain": ["读取成功", "返回了 /etc/passwd 的内容"],
+    "description": "审计路径穿越防护"
+  },
+  {
+    "id": "security-command-injection",
+    "skill": "investigate",
+    "input": "search_code 是否用 execFile 而非 exec",
+    "mustContainAny": ["execFile", "参数数组"],
+    "description": "验证命令注入已修"
+  }
+]

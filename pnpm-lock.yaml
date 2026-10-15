@@ -115,6 +115,25 @@ importers:
         specifier: ^7.0.2
         version: 7.0.2
 
+  eval:
+    dependencies:
+      '@tda/core':
+        specifier: workspace:*
+        version: link:../packages/core
+      '@tda/skills':
+        specifier: workspace:*
+        version: link:../packages/skills
+      '@tda/tools':
+        specifier: workspace:*
+        version: link:../packages/tools
+    devDependencies:
+      tsx:
+        specifier: ^4.23.15
+        version: 4.23.15
+      typescript:
+        specifier: ^7.0.2
+        version: 7.0.2
+
   packages/a2a:
     dependencies:
       express:

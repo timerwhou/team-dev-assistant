@@ -6,7 +6,9 @@
     "dev": "pnpm --filter @tda/cli dev",
     "typecheck": "pnpm -r --no-bail typecheck",
     "verify": "bash scripts/verify.sh",
-    "start:all": "bash scripts/dev.sh"
+    "start:all": "bash scripts/dev.sh",
+    "eval": "pnpm --filter @tda/eval eval",
+    "test": "pnpm -r --no-bail --if-present test"
   },
   "devDependencies": {
     "@types/node": "^26.6.5",
