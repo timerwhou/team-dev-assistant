@@ -7,3 +7,4 @@ dist
 .logs
 .traces
 eval/report/*.json
+buildkitd.local.toml

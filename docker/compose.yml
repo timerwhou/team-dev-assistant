@@ -1,0 +1,56 @@
+name: team-dev-assistant
+
+x-agent-base: &agent-base
+  build:
+    context: ..
+    dockerfile: docker/Dockerfile
+  env_file:
+    - ../.env
+  volumes:
+    - ..:/workspace:ro
+  working_dir: /app
+  environment:
+    TDA_ROOT: /workspace
+    TDA_TRACE: "1"
+
+services:
+  reviewer:
+    <<: *agent-base
+    container_name: tda-reviewer
+    command: node_modules/.bin/tsx apps/reviewer/src/index.ts
+    ports:
+      - "4101:4101"
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:4101/.well-known/agent.json"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 30s
+
+  investigator:
+    <<: *agent-base
+    container_name: tda-investigator
+    command: node_modules/.bin/tsx apps/investigator/src/index.ts
+    ports:
+      - "4102:4102"
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:4102/.well-known/agent.json"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 30s
+
+  coordinator:
+    <<: *agent-base
+    container_name: tda-coordinator
+    command: node_modules/.bin/tsx apps/coordinator/src/index.ts "apps/cli/src/index.ts" "项目里有没有 SQL 注入"
+    depends_on:
+      reviewer:
+        condition: service_healthy
+      investigator:
+        condition: service_healthy
+    environment:
+      TDA_ROOT: /workspace
+      TDA_TRACE: "1"
+      REVIEWER_URL: http://reviewer:4101
+      INVESTIGATOR_URL: http://investigator:4102

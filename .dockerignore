@@ -1,0 +1,16 @@
+node_modules
+**/node_modules
+dist
+**/dist
+.git
+.github
+.env
+.env.*
+!.env.example
+.traces
+.logs
+eval/report/*.json
+*.log
+.DS_Store
+docs
+docker/compose.yml
