@@ -7,7 +7,10 @@
     "./lib/env": "./src/lib/env.ts",
     "./lib/llm": "./src/lib/llm.ts",
     "./agent/loop": "./src/agent/loop.ts",
-    "./lib/search-code": "./src/lib/search-code.ts"
+    "./lib/search-code": "./src/lib/search-code.ts",
+    "./trace": "./src/trace/recorder.ts",
+    "./trace/reporters/jsonl": "./src/trace/reporters/jsonl.ts",
+    "./trace/reporters/console": "./src/trace/reporters/console.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"

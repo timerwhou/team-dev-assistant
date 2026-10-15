@@ -4,3 +4,8 @@ export * from "./lib/search-code";
 export * from "./agent/loop";
 export * from "./agent/types";
 export * from "./schemas/code-review";
+export * from "./trace/types";
+export * from "./trace/recorder";
+export * from "./trace/pricing";
+export { createJsonlReporter } from "./trace/reporters/jsonl";
+export { createConsoleReporter } from "./trace/reporters/console";
