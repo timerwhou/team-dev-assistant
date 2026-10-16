@@ -44,12 +44,35 @@ runAgent(skill.system, userMessage, { tools, executeTools })
 
 ## 2. 目标
 
+
+### 2.2 命名约定（SEP-2640 约束）
+
+SEP-2640 明确规定：**`SKILL.md` 所在目录的最后一段必须等于 frontmatter 的 `name`**。
+
+我们项目采用：
+
+| CLI 命令 | frontmatter `name` | 目录名 |
+|---|---|---|
+| `/review` | `review` | `review/` |
+| `/investigate` | `investigate` | `investigate/` |
+| `/issues` | `issues` | `issues/` |
+
+**设计权衡**：
+- **`name` 用短命令**（`review` 而非 `code-review`）—— CLI 命令稳定、易记
+- **目录名跟随 `name`** —— 符合 SEP-2640，避免 MCP 客户端发现失败
+- **不用长语义名做目录名** —— 避免与 CLI 命令不一致
+
+**反例**（曾经的设计，已废弃）：
+- ❌ 目录 `code-review/` + `name: review` —— 违反 SEP-2640
+- ❌ 目录 `issue-triage/` + `name: issues` —— 违反 SEP-2640
+
+
 ### 2.1 目录结构（SEP-2640 兼容）
 
 ```
 packages/skills/
 ├── skills/                       ← 新增：Skill 源文件目录
-│   ├── code-review/
+│   ├── review/
 │   │   ├── SKILL.md              ← 主定义
 │   │   └── references/
 │   │       └── checklist.md      ← 可选：支持文件
@@ -57,7 +80,7 @@ packages/skills/
 │   │   ├── SKILL.md
 │   │   └── references/
 │   │       └── evidence-template.md
-│   └── issue-triage/
+│   └── issues/
 │       └── SKILL.md
 ├── src/
 │   ├── loader.ts                 ← 新增：从 SKILL.md 加载
@@ -73,7 +96,7 @@ packages/skills/
 
 ```markdown
 ---
-name: code-review
+name: review
 description: 评审指定文件或代码片段，输出结构化问题清单
 ---
 
@@ -121,8 +144,8 @@ skills/get       → 传入 skill://<name>/<path>，返回文件内容
 
 URI 约定：
 
-- `skill://code-review/SKILL.md` — 主定义
-- `skill://code-review/references/checklist.md` — 支持文件
+- `skill://review/SKILL.md` — 主定义
+- `skill://review/references/checklist.md` — 支持文件
 
 ## 3. 迁移步骤
 
@@ -143,7 +166,7 @@ URI 约定：
 
 - `docs/site/.vitepress/config.mts` 动态扫描 `packages/skills/skills/`
 - 为每个 Skill 生成 VitePress 页面
-- 验证：文档站出现 `/skills/code-review` 页面
+- 验证：文档站出现 `/skills/review` 页面
 
 ## 4. 兼容性策略
 

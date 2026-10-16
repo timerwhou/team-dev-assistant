@@ -11,7 +11,9 @@
   },
   "dependencies": {
     "@modelcontextprotocol/server": "^2.3.1",
+    "@olaservo/ext-skills": "^0.16.0",
     "@tda/core": "workspace:*",
+    "@tda/skills": "workspace:*",
     "zod": "^4.6.7"
   },
   "devDependencies": {
