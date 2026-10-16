@@ -4,7 +4,7 @@ AI Agent monorepo —— 代码评审、问题排查、Issue 汇总，支持 CLI
 
 [![CI](https://github.com/timerwhou/team-dev-assistant/actions/workflows/ci.yml/badge.svg)](https://github.com/timerwhou/team-dev-assistant/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/timerwhou/team-dev-assistant)](https://github.com/timerwhou/team-dev-assistant/releases)
-[![Docker](https://img.shields.io/badge/ghcr.io-timerwhou%2Fteam-dev-assistant-blue)](https://github.com/timerwhou/team-dev-assistant/pkgs/container/team-dev-assistant)
+[![Docker](https://img.shields.io/badge/ghcr.io-timerwhou%2Fteam--dev--assistant-blue?logo=docker&logoColor=white)](https://github.com/<你的用户名>/team-dev-assistant/pkgs/container/team-dev-assistant)
 [![Eval](https://github.com/timerwhou/team-dev-assistant/actions/workflows/eval.yml/badge.svg)](https://github.com/timerwhou/team-dev-assistant/actions/workflows/eval.yml)
 [![CodeQL](https://github.com/timerwhou/team-dev-assistant/actions/workflows/codeql.yml/badge.svg)](https://github.com/timerwhou/team-dev-assistant/actions/workflows/codeql.yml)
 
