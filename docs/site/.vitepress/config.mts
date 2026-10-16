@@ -1,4 +1,5 @@
 import { defineConfig } from "vitepress";
+import pkg from "../../../package.json" with { type: "json" };
 
 export default defineConfig({
   title: "Team Dev Assistant",
@@ -25,7 +26,7 @@ export default defineConfig({
       { text: "应用", link: "/apps/cli" },
       { text: "开发", link: "/dev/eval" },
       {
-        text: "v0.1.1",
+        text: `v${pkg.version}`,
         items: [
           { text: "Release", link: "https://github.com/timerwhou/team-dev-assistant/releases" },
           { text: "CHANGELOG", link: "https://github.com/timerwhou/team-dev-assistant/blob/main/CHANGELOG.md" },
