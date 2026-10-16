@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.4](https://github.com/timerwhou/team-dev-assistant/compare/v0.1.3...v0.1.4) (2026-10-16)
+
+
+### Features
+
+* **docs:** Skill 文档自动聚合 ([#26](https://github.com/timerwhou/team-dev-assistant/issues/26)) ([37fef4f](https://github.com/timerwhou/team-dev-assistant/commit/37fef4f73bb681f7e8e9908036221087669e195b))
+* **skills:** Skill 目录结构适配 SEP-2640 ([#19](https://github.com/timerwhou/team-dev-assistant/issues/19)) ([022baaf](https://github.com/timerwhou/team-dev-assistant/commit/022baaf10b37302b2ccf059479105748d25123b8))
+
 ## [0.1.3](https://github.com/timerwhou/team-dev-assistant/compare/v0.1.2...v0.1.3) (2026-10-16)
 
 
