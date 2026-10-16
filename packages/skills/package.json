@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./loader": "./src/loader.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"
@@ -13,6 +14,7 @@
   },
   "dependencies": {
     "@tda/core": "workspace:*",
+    "gray-matter": "^4.0.3",
     "zod": "^4.6.7"
   },
   "license": "MIT",
