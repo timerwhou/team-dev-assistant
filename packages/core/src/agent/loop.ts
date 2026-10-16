@@ -30,6 +30,12 @@ export async function runAgent(
 
   let steps = 0;
   let toolCallCount = 0;
+  let contextBuildStats = {
+    total: 0,
+    compressed: 0,
+    beforeTokens: 0,
+    afterTokens: 0,
+  };
   let totalPromptTokens = 0;
   let totalCompletionTokens = 0;
   let totalCostUSD = 0;
@@ -115,6 +121,25 @@ export async function runAgent(
         if (r.ok) {
           const compressed = compressToolResult(r.name, r.result, opts.compressorOptions);
           toolContent = compressed.content;
+
+          // 统计 + trace
+          contextBuildStats.total++;
+          contextBuildStats.beforeTokens += compressed.beforeTokens;
+          contextBuildStats.afterTokens += compressed.afterTokens;
+          if (compressed.compressed) {
+            contextBuildStats.compressed++;
+          }
+
+          recorder.emitContextBuild({
+            agentType: "root",
+            layer: "tool",
+            action: compressed.compressed ? "truncate" : "keep",
+            toolName: r.name,
+            beforeTokens: compressed.beforeTokens,
+            afterTokens: compressed.afterTokens,
+            reason: compressed.reason ?? "未压缩（在阈值内）",
+          });
+
           if (opts.verbose && compressed.compressed) {
             console.log(
               `    📦 压缩 ${r.name}: ${compressed.beforeTokens} → ${compressed.afterTokens} tokens（${compressed.reason}）`
@@ -189,6 +214,14 @@ export async function runAgent(
       totalCompletionTokens,
       totalCostUSD,
       stopReason,
+      contextBuilds: contextBuildStats.total > 0
+        ? {
+            total: contextBuildStats.total,
+            compressed: contextBuildStats.compressed,
+            beforeTokens: contextBuildStats.beforeTokens,
+            afterTokens: contextBuildStats.afterTokens,
+          }
+        : undefined,
     });
   }
 }
