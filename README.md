@@ -3,6 +3,8 @@
 AI Agent monorepo —— 代码评审、问题排查、Issue 汇总，支持 CLI / A2A / MCP 三种入口。
 
 [![CI](https://github.com/timerwhou/team-dev-assistant/actions/workflows/ci.yml/badge.svg)](https://github.com/timerwhou/team-dev-assistant/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/<你的用户名>/team-dev-assistant)](https://github.com/<你的用户名>/team-dev-assistant/releases)
+[![Docker](https://img.shields.io/badge/ghcr.io-<你的用户名>%2Fteam-dev-assistant-blue)](https://github.com/<你的用户名>/team-dev-assistant/pkgs/container/team-dev-assistant)
 [![Eval](https://github.com/timerwhou/team-dev-assistant/actions/workflows/eval.yml/badge.svg)](https://github.com/timerwhou/team-dev-assistant/actions/workflows/eval.yml)
 
 ## 架构
