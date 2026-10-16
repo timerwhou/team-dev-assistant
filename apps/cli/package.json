@@ -15,5 +15,6 @@
     "@tda/skills": "workspace:*",
     "@tda/tools": "workspace:*"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "description": "命令行入口"
 }

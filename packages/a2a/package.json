@@ -15,5 +15,6 @@
     "@types/express": "^5.0.6",
     "typescript": "^7.0.2"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "description": "A2A 协议：Agent Card + JSON-RPC + Task 生命周期"
 }

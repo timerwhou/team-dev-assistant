@@ -15,5 +15,6 @@
     "tsx": "^4.23.15",
     "typescript": "^7.0.2"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "description": "评估集：8 用例覆盖 review / investigate / security"
 }

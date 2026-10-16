@@ -17,5 +17,6 @@
     "openai": "^7.33.0",
     "zod": "^4.6.7"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "description": "工具集：read_file / search_code / list_issues"
 }

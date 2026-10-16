@@ -2,7 +2,7 @@ import { defineConfig } from "vitepress";
 
 export default defineConfig({
   title: "Team Dev Assistant",
-  description: "AI Agent monorepo — 代码评审、问题排查、Issue 汇总",
+  description: "面向研发团队的 AI Agent 工具集：一条命令启动代码评审、问题排查、Issue 汇总三类 Agent，支持 CLI / A2A / MCP 接入，多 Agent 协作。内置可观测性（LLM/Agent trace）、安全加固（防命令注入/路径穿越）与评估体系（回归用例），开箱可用。",
   base: "/team-dev-assistant/",   // ← 必须，否则资源 404
   cleanUrls: true,
   lastUpdated: true,
@@ -11,7 +11,7 @@ export default defineConfig({
     ["link", { rel: "icon", href: "/team-dev-assistant/logo.svg" }],
     ["meta", { name: "og:type", content: "website" }],
     ["meta", { name: "og:title", content: "Team Dev Assistant" }],
-    ["meta", { name: "og:description", content: "AI Agent monorepo" }],
+    ["meta", { name: "og:description", content: "面向研发团队的 AI Agent 工具集：一条命令启动代码评审、问题排查、Issue 汇总三类 Agent，支持 CLI / A2A / MCP 接入，多 Agent 协作。内置可观测性（LLM/Agent trace）、安全加固（防命令注入/路径穿越）与评估体系（回归用例），开箱可用。" }],
   ],
 
   themeConfig: {

@@ -17,5 +17,6 @@
     "tsx": "^4.23.15",
     "typescript": "^7.0.2"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "description": "多 Agent 协调器"
 }

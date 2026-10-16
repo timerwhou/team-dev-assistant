@@ -15,5 +15,6 @@
     "@tda/core": "workspace:*",
     "zod": "^4.6.7"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "description": "Skill 系统：声明式 Prompt + 工具白名单"
 }

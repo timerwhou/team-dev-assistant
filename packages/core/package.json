@@ -20,5 +20,6 @@
     "openai": "^7.33.0",
     "zod": "^4.6.7"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "description": "Agent 核心：LLM 调用 + Agent 循环 + 收敛机制 + trace"
 }
