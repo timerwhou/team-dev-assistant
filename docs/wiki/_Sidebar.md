@@ -3,4 +3,3 @@
 - [[Home]]
 - [[Architecture]]
 - [[Demo]]
-- [[Resume]]
