@@ -1,0 +1,29 @@
+name: Wiki Sync
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/wiki/**"
+      - ".github/workflows/wiki-sync.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Sync docs to Wiki
+        uses: Andrew-Chen-Wang/github-wiki-action@v5
+        with:
+          path: docs/wiki/
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "docs: sync wiki from ${{ github.sha }}"
+          strategy: clone
