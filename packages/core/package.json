@@ -10,7 +10,8 @@
     "./lib/search-code": "./src/lib/search-code.ts",
     "./trace": "./src/trace/recorder.ts",
     "./trace/reporters/jsonl": "./src/trace/reporters/jsonl.ts",
-    "./trace/reporters/console": "./src/trace/reporters/console.ts"
+    "./trace/reporters/console": "./src/trace/reporters/console.ts",
+    "./context": "./src/context/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"

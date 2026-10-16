@@ -9,3 +9,4 @@ export * from "./trace/recorder";
 export * from "./trace/pricing";
 export { createJsonlReporter } from "./trace/reporters/jsonl";
 export { createConsoleReporter } from "./trace/reporters/console";
+export * from "./context";
