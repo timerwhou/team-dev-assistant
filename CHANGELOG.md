@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.3](https://github.com/timerwhou/team-dev-assistant/compare/v0.1.2...v0.1.3) (2026-10-16)
+
+
+### Bug Fixes
+
+* **docs:** 版本号从 package.json 动态读取 ([#10](https://github.com/timerwhou/team-dev-assistant/issues/10)) ([cb602e9](https://github.com/timerwhou/team-dev-assistant/commit/cb602e92a8263d9021d610322bf2f95708a7d3f6))
+
 ## [0.1.2](https://github.com/timerwhou/team-dev-assistant/compare/v0.1.1...v0.1.2) (2026-10-16)
 
 
