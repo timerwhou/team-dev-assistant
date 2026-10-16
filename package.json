@@ -8,11 +8,15 @@
     "verify": "bash scripts/verify.sh",
     "start:all": "bash scripts/dev.sh",
     "eval": "pnpm --filter @tda/eval eval",
-    "test": "pnpm -r --no-bail --if-present test"
+    "test": "pnpm -r --no-bail --if-present test",
+    "prepare": "husky"
   },
   "devDependencies": {
+    "@commitlint/config-conventional": "^21.2.3",
     "@types/node": "^26.6.5",
+    "commitlint": "^21.2.3",
     "concurrently": "^10.0.6",
+    "husky": "^9.1.7",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2"
   }
