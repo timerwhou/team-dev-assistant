@@ -98,6 +98,7 @@ export default defineConfig({
             { text: "0. Use ADRs", link: "/adr/0000-use-adrs" },
             { text: "1. Adopt MCP Skills Extension", link: "/adr/0001-adopt-mcp-skills-extension" },
             { text: "2. Upgrade to MCP v2", link: "/adr/0002-upgrade-to-mcp-v2" },
+            { text: "3. Implement Skills as Native Extension", link: "/adr/0003-implement-skills-as-native-extension" },
           ],
         },
       ],
