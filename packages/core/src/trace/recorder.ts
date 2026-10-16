@@ -5,6 +5,7 @@ import type {
   LLMCallTrace,
   AgentRunTrace,
   ToolCallTrace,
+  ContextBuildTrace,
 } from "./types";
 
 /** 去掉 id/timestamp/kind，由 recorder 补齐 */
@@ -36,6 +37,10 @@ class Recorder {
 
   emitToolCall(payload: EmitPayload<ToolCallTrace>): void {
     this.emit({ ...payload, kind: "tool_call" } as TraceEvent);
+  }
+
+  emitContextBuild(payload: EmitPayload<ContextBuildTrace>): void {
+    this.emit({ ...payload, kind: "context_build" } as TraceEvent);
   }
 
   private emit(partial: Omit<TraceEvent, "id" | "timestamp"> & { id?: string; timestamp?: string }): void {
