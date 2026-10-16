@@ -14,7 +14,8 @@
     "./context": "./src/context/index.ts"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test test/*.test.ts"
   },
   "dependencies": {
     "dotenv": "^18.0.7",

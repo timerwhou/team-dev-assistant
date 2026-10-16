@@ -39,3 +39,30 @@ export interface ContextBuilder<M = unknown> {
    */
   build(messages: M[], budget: TokenBudget): ContextBuildResult<M>;
 }
+
+/**
+ * 工具结果压缩配置。
+ *
+ * 每个工具一个阈值 + 策略。
+ */
+export type CompressorOptions = {
+  /** read_file：超过此行数触发压缩 */
+  readFileMaxLines?: number;
+  /** search_code：超过此匹配数触发压缩 */
+  searchCodeMaxMatches?: number;
+  /** list_issues：超过此条数触发压缩 */
+  listIssuesMaxItems?: number;
+};
+
+export type CompressionResult = {
+  /** 压缩后的内容（字符串） */
+  content: string;
+  /** 是否发生了压缩 */
+  compressed: boolean;
+  /** 压缩前 tokens */
+  beforeTokens: number;
+  /** 压缩后 tokens */
+  afterTokens: number;
+  /** 压缩原因（未压缩时为 undefined） */
+  reason?: string;
+};

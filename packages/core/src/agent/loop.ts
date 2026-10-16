@@ -1,6 +1,8 @@
 import OpenAI from "openai";
 import { tracedChatCompletion, getModel } from "../lib/llm";
 import { recorder } from "../trace/recorder";
+import { compressToolResult } from "../context/compressor";
+import type { CompressorOptions } from "../context/types";
 import type { ToolCallInput, ToolCallResult } from "./types";
 
 type Message = OpenAI.Chat.Completions.ChatCompletionMessageParam;
@@ -8,6 +10,8 @@ type Message = OpenAI.Chat.Completions.ChatCompletionMessageParam;
 export type ToolExecutor = (calls: ToolCallInput[]) => Promise<ToolCallResult[]>;
 
 export type AgentOptions = {
+  /** 工具结果压缩配置（传给 compressToolResult） */
+  compressorOptions?: CompressorOptions;
   maxSteps?: number;
   verbose?: boolean;
   tools?: OpenAI.Chat.Completions.ChatCompletionTool[];
@@ -106,10 +110,23 @@ export async function runAgent(
             `  ${r.ok ? "✅" : "❌"} ${r.name} (${r.durationMs}ms)${r.ok ? "" : " " + r.error}`
           );
         }
+        // 压缩工具结果（Story #37）
+        let toolContent: string;
+        if (r.ok) {
+          const compressed = compressToolResult(r.name, r.result, opts.compressorOptions);
+          toolContent = compressed.content;
+          if (opts.verbose && compressed.compressed) {
+            console.log(
+              `    📦 压缩 ${r.name}: ${compressed.beforeTokens} → ${compressed.afterTokens} tokens（${compressed.reason}）`
+            );
+          }
+        } else {
+          toolContent = JSON.stringify({ error: r.error });
+        }
         messages.push({
           role: "tool",
           tool_call_id: r.toolCallId,
-          content: JSON.stringify(r.ok ? r.result : { error: r.error }),
+          content: toolContent,
         });
       }
 
