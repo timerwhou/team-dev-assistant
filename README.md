@@ -4,7 +4,7 @@
 
 [![CI](https://github.com/timerwhou/team-dev-assistant/actions/workflows/ci.yml/badge.svg)](https://github.com/timerwhou/team-dev-assistant/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/timerwhou/team-dev-assistant)](https://github.com/timerwhou/team-dev-assistant/releases)
-[![Docker](https://img.shields.io/badge/ghcr.io-timerwhou%2Fteam--dev--assistant-blue?logo=docker&logoColor=white)](https://github.com/<你的用户名>/team-dev-assistant/pkgs/container/team-dev-assistant)
+[![Docker](https://img.shields.io/badge/ghcr.io-timerwhou%2Fteam--dev--assistant-blue?logo=docker&logoColor=white)](https://github.com/timerwhou/team-dev-assistant/pkgs/container/team-dev-assistant)
 [![Eval](https://github.com/timerwhou/team-dev-assistant/actions/workflows/eval.yml/badge.svg)](https://github.com/timerwhou/team-dev-assistant/actions/workflows/eval.yml)
 [![CodeQL](https://github.com/timerwhou/team-dev-assistant/actions/workflows/codeql.yml/badge.svg)](https://github.com/timerwhou/team-dev-assistant/actions/workflows/codeql.yml)
 
@@ -24,6 +24,20 @@ apps/
   coordinator/   多 Agent 协调器
 eval/            评估集（8 个用例）
 ```
+
+## Docker
+
+```bash
+# 拉取镜像
+docker pull ghcr.io/timerwhou/team-dev-assistant:latest
+
+# 运行 CLI
+docker run --rm -e OPENAI_API_KEY=sk-xxx \
+  ghcr.io/timerwhou/team-dev-assistant:latest \
+  pnpm --filter @tda/cli dev -- /help
+```
+
+详见 [GHCR 部署文档](https://timerwhou.github.io/team-dev-assistant/deploy/ghcr)。
 
 ## 快速开始
 

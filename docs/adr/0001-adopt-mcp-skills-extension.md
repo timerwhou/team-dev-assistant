@@ -1,7 +1,7 @@
 # 1. Adopt MCP Skills Extension for Skill Distribution
 
 Date: 2026-10-16
-Status: Proposed
+Status: Accepted
 
 ## Context and Problem Statement
 

@@ -1,7 +1,7 @@
 # 2. Upgrade to MCP v2 SDK (2026-07-28 Protocol Revision)
 
 Date: 2026-10-16
-Status: Proposed
+Status: Accepted
 
 ## Context and Problem Statement
 
