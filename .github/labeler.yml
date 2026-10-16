@@ -1,0 +1,25 @@
+core:
+  - packages/core/**/*
+
+tools:
+  - packages/tools/**/*
+
+skills:
+  - packages/skills/**/*
+
+protocol:
+  - packages/a2a/**/*
+  - packages/mcp-server/**/*
+
+apps:
+  - apps/**/*
+
+ci:
+  - .github/**/*
+
+docs:
+  - docs/**/*
+  - "*.md"
+
+docker:
+  - docker/**/*
