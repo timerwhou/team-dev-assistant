@@ -25,6 +25,8 @@ export default defineConfig({
       { text: "包", link: "/packages/core" },
       { text: "应用", link: "/apps/cli" },
       { text: "开发", link: "/dev/eval" },
+      { text: "ADR", link: "/adr/0000-use-adrs" },
+      { text: "设计", link: "/design/skills-migration" },
       {
         text: `v${pkg.version}`,
         items: [
@@ -80,6 +82,23 @@ export default defineConfig({
             { text: "可观测性", link: "/dev/trace" },
             { text: "容器化", link: "/dev/docker" },
           ],
+      "/adr/": [
+        {
+          text: "Architecture Decisions",
+          items: [
+            { text: "0. Use ADRs", link: "/adr/0000-use-adrs" },
+            { text: "1. Adopt MCP Skills Extension", link: "/adr/0001-adopt-mcp-skills-extension" },
+          ],
+        },
+      ],
+      "/design/": [
+        {
+          text: "设计文档",
+          items: [
+            { text: "Skill 迁移", link: "/design/skills-migration" },
+          ],
+        },
+      ],
         },
       ],
     },
