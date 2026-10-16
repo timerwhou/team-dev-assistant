@@ -143,3 +143,4 @@ MCP Server 用 @tda/tools 实现，复用业务逻辑
 - 每次 Agent 运行记录：steps / toolCalls / stopReason
 - JSONL 输出到 `.traces/YYYY-MM-DD.jsonl`
 - `TDA_TRACE=0` 关闭，`TDA_TRACE_CONSOLE=1` 打到控制台
+
