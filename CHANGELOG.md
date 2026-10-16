@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/timerwhou/team-dev-assistant/compare/v0.1.6...v0.2.0) (2026-10-16)
+
+
+### Features
+
+* **docs:** MCP v2 迁移文档与客户端验证 ([#33](https://github.com/timerwhou/team-dev-assistant/issues/33)) ([96fe39d](https://github.com/timerwhou/team-dev-assistant/commit/96fe39d94956374e78b1b7c9c0d326014f9d689d))
+
 ## [0.1.6](https://github.com/timerwhou/team-dev-assistant/compare/v0.1.5...v0.1.6) (2026-10-16)
 
 
