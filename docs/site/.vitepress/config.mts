@@ -1,4 +1,13 @@
 import { defineConfig } from "vitepress";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __configDir = path.dirname(fileURLToPath(import.meta.url));
+const __skillsSidebarPath = path.resolve(__configDir, "../../skills/_sidebar.json");
+const skillsSidebar = fs.existsSync(__skillsSidebarPath)
+  ? JSON.parse(fs.readFileSync(__skillsSidebarPath, "utf-8")).skills
+  : [{ text: "总览", link: "/skills/" }];
 import pkg from "../../../package.json" with { type: "json" };
 
 export default defineConfig({
