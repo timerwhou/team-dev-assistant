@@ -99,6 +99,7 @@ export default defineConfig({
             { text: "1. Adopt MCP Skills Extension", link: "/adr/0001-adopt-mcp-skills-extension" },
             { text: "2. Upgrade to MCP v2", link: "/adr/0002-upgrade-to-mcp-v2" },
             { text: "3. Implement Skills as Native Extension", link: "/adr/0003-implement-skills-as-native-extension" },
+            { text: "4. Align Release Versioning", link: "/adr/0004-align-release-versioning-with-milestones" },
           ],
         },
       ],
@@ -108,6 +109,7 @@ export default defineConfig({
           items: [
             { text: "Skill 迁移", link: "/design/skills-migration" },
             { text: "MCP v2 迁移", link: "/design/mcp-v2-migration" },
+            { text: "版本策略", link: "/design/versioning-strategy" },
           ],
         },
       ],
