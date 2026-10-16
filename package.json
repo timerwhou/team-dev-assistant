@@ -10,15 +10,17 @@
     "eval": "pnpm --filter @tda/eval eval",
     "test": "pnpm -r --no-bail --if-present test",
     "prepare": "husky",
-    "docs:dev": "vitepress dev docs/site",
-    "docs:build": "vitepress build docs/site",
-    "docs:preview": "vitepress preview docs/site"
+    "docs:dev": "pnpm docs:gen && vitepress dev docs/site",
+    "docs:build": "pnpm docs:gen && vitepress build docs/site",
+    "docs:preview": "vitepress preview docs/site",
+    "docs:gen": "node scripts/generate-skills-docs.mjs"
   },
   "devDependencies": {
     "@commitlint/config-conventional": "^21.2.3",
     "@types/node": "^26.6.5",
     "commitlint": "^21.2.3",
     "concurrently": "^10.0.6",
+    "gray-matter": "^4.0.3",
     "husky": "^9.1.7",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",

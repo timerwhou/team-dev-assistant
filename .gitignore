@@ -9,3 +9,7 @@ dist
 eval/report/*.json
 buildkitd.local.tomldocs/site/.vitepress/dist
 docs/site/.vitepress/cache
+
+# 自动生成的 Skill 文档
+docs/site/skills/*.md
+docs/site/skills/_sidebar.json
