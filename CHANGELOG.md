@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.5](https://github.com/timerwhou/team-dev-assistant/compare/v0.1.4...v0.1.5) (2026-10-16)
+
+
+### Features
+
+* **mcp:** 升级到 v2 SDK (2026-07-28 规范) ([#27](https://github.com/timerwhou/team-dev-assistant/issues/27)) ([fe13864](https://github.com/timerwhou/team-dev-assistant/commit/fe1386444b3e0b2bc47c5c1fa855e1a435c293c2))
+* **mcp:** 用 @olaservo/ext-skills 实现原生 Skills Extension ([#29](https://github.com/timerwhou/team-dev-assistant/issues/29)) ([e41eeb8](https://github.com/timerwhou/team-dev-assistant/commit/e41eeb8a02fbe5d3138bcdd96ce4425b7f119ab0))
+
 ## [0.1.4](https://github.com/timerwhou/team-dev-assistant/compare/v0.1.3...v0.1.4) (2026-10-16)
 
 
