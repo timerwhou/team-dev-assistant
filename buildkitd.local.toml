@@ -1,0 +1,4 @@
+debug = false
+
+[registry."docker.io"]
+  mirrors = ["docker.1ms.run", "dockerproxy.net"]

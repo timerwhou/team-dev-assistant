@@ -9,7 +9,10 @@
     "start:all": "bash scripts/dev.sh",
     "eval": "pnpm --filter @tda/eval eval",
     "test": "pnpm -r --no-bail --if-present test",
-    "prepare": "husky"
+    "prepare": "husky",
+    "docs:dev": "vitepress dev docs/site",
+    "docs:build": "vitepress build docs/site",
+    "docs:preview": "vitepress preview docs/site"
   },
   "devDependencies": {
     "@commitlint/config-conventional": "^21.2.3",
@@ -18,7 +21,8 @@
     "concurrently": "^10.0.6",
     "husky": "^9.1.7",
     "tsx": "^4.23.15",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "vitepress": "^1.6.4"
   },
   "version": "0.1.1",
   "license": "MIT"
