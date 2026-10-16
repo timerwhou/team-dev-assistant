@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.2](https://github.com/timerwhou/team-dev-assistant/compare/v0.1.1...v0.1.2) (2026-10-16)
+
+
+### Bug Fixes
+
+* **ci:** labeler v5 语法 —— 用 changed-files + any-glob-to-any-file ([aff3583](https://github.com/timerwhou/team-dev-assistant/commit/aff35839e01951b67d74fa2e558b1bd41275286d))
+* **ci:** 改用聚合门禁（aggregate gate）作为唯一 Required check ([1a6a5c4](https://github.com/timerwhou/team-dev-assistant/commit/1a6a5c4ea53ed78397e1b5fc738c0fce2c8a8d8f))
+
 ## [0.1.1](https://github.com/timerwhou/team-dev-assistant/compare/v0.1.0...v0.1.1) (2026-10-16)
 
 
