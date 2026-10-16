@@ -16,5 +16,6 @@
     "@tda/core": "workspace:*",
     "openai": "^7.33.0",
     "zod": "^4.6.7"
-  }
+  },
+  "license": "MIT"
 }

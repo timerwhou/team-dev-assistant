@@ -14,5 +14,6 @@
     "@tda/core": "workspace:*",
     "@tda/skills": "workspace:*",
     "@tda/tools": "workspace:*"
-  }
+  },
+  "license": "MIT"
 }
