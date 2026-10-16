@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/timerwhou/team-dev-assistant/compare/v0.2.0...v0.3.0) (2026-10-16)
+
+
+### Features
+
+* **core:** 新增 context/ 模块骨架 + ADR-0005 ([#41](https://github.com/timerwhou/team-dev-assistant/issues/41)) ([91ba06c](https://github.com/timerwhou/team-dev-assistant/commit/91ba06c7f052ec548b38519b977de469a9b61533))
+
 ## [0.2.0](https://github.com/timerwhou/team-dev-assistant/compare/v0.1.6...v0.2.0) (2026-10-16)
 
 
