@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/timerwhou/team-dev-assistant/compare/v0.3.0...v0.4.0) (2026-10-16)
+
+
+### Features
+
+* **core:** Tool Context 压缩与 Token 预算 ([#43](https://github.com/timerwhou/team-dev-assistant/issues/43)) ([9b3d28b](https://github.com/timerwhou/team-dev-assistant/commit/9b3d28b69e561af435d8ccb6ebbbb9b1410f5bc8))
+
 ## [0.3.0](https://github.com/timerwhou/team-dev-assistant/compare/v0.2.0...v0.3.0) (2026-10-16)
 
 
