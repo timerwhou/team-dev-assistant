@@ -88,6 +88,7 @@ export default defineConfig({
           items: [
             { text: "0. Use ADRs", link: "/adr/0000-use-adrs" },
             { text: "1. Adopt MCP Skills Extension", link: "/adr/0001-adopt-mcp-skills-extension" },
+            { text: "2. Upgrade to MCP v2", link: "/adr/0002-upgrade-to-mcp-v2" },
           ],
         },
       ],
@@ -96,6 +97,7 @@ export default defineConfig({
           text: "设计文档",
           items: [
             { text: "Skill 迁移", link: "/design/skills-migration" },
+            { text: "MCP v2 迁移", link: "/design/mcp-v2-migration" },
           ],
         },
       ],
