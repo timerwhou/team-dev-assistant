@@ -1,5 +1,7 @@
 # Team Dev Assistant
 
+> 📖 **文档站**：https://timerwhou.github.io/team-dev-assistant/
+
 AI Agent monorepo —— 代码评审、问题排查、Issue 汇总，支持 CLI / A2A / MCP 三种入口。
 
 [![CI](https://github.com/timerwhou/team-dev-assistant/actions/workflows/ci.yml/badge.svg)](https://github.com/timerwhou/team-dev-assistant/actions/workflows/ci.yml)
