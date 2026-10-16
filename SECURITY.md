@@ -19,9 +19,6 @@
    打开 https://github.com/timerwhou/team-dev-assistant/security/advisories/new
    填写漏洞详情，提交后只有维护者可见。
 
-2. **邮件**
-   发送至 `security@example.com`（把这里换成你的真实邮箱）
-
 ### 报告内容应包含
 
 - 漏洞类型（命令注入 / 路径穿越 / XSS / SSRF / Prompt Injection 等）
