@@ -1,0 +1,19 @@
+# 默认所有文件由维护者 review
+* @timerwhou
+
+# 核心逻辑
+/packages/core/      @timerwhou
+/packages/tools/     @timerwhou
+/packages/skills/    @timerwhou
+
+# 协议层
+/packages/a2a/       @timerwhou
+/packages/mcp-server/ @timerwhou
+
+# 应用
+/apps/               @timerwhou
+
+# CI / 发布 / 安全
+/.github/            @timerwhou
+/SECURITY.md         @timerwhou
+/docker/             @timerwhou

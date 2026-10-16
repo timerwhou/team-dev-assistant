@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 📖 文档站
+    url: https://timerwhou.github.io/team-dev-assistant/
+    about: 先查阅文档，大部分问题这里都有答案
+  - name: 💬 Discussions
+    url: https://github.com/timerwhou/team-dev-assistant/discussions
+    about: 提问、讨论、分享用法
+  - name: 🔒 安全漏洞
+    url: https://github.com/timerwhou/team-dev-assistant/security/advisories/new
+    about: 请勿通过公开 Issue 报告安全漏洞
