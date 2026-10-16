@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.6](https://github.com/timerwhou/team-dev-assistant/compare/v0.1.5...v0.1.6) (2026-10-16)
+
+
+### Bug Fixes
+
+* **release:** 对齐版本策略与里程碑规划 ([#31](https://github.com/timerwhou/team-dev-assistant/issues/31)) ([5302732](https://github.com/timerwhou/team-dev-assistant/commit/5302732614a1eda0df257be54a33071152d3d0bd))
+
 ## [0.1.5](https://github.com/timerwhou/team-dev-assistant/compare/v0.1.4...v0.1.5) (2026-10-16)
 
 
