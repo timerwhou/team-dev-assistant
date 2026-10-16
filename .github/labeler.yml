@@ -1,25 +1,41 @@
 core:
-  - packages/core/**/*
+  - changed-files:
+      - any-glob-to-any-file: "packages/core/**/*"
 
 tools:
-  - packages/tools/**/*
+  - changed-files:
+      - any-glob-to-any-file: "packages/tools/**/*"
 
 skills:
-  - packages/skills/**/*
+  - changed-files:
+      - any-glob-to-any-file: "packages/skills/**/*"
 
 protocol:
-  - packages/a2a/**/*
-  - packages/mcp-server/**/*
+  - changed-files:
+      - any-glob-to-any-file:
+          - "packages/a2a/**/*"
+          - "packages/mcp-server/**/*"
 
 apps:
-  - apps/**/*
+  - changed-files:
+      - any-glob-to-any-file: "apps/**/*"
 
 ci:
-  - .github/**/*
+  - changed-files:
+      - any-glob-to-any-file: ".github/**/*"
 
 docs:
-  - docs/**/*
-  - "*.md"
+  - changed-files:
+      - any-glob-to-any-file:
+          - "docs/**/*"
+          - "*.md"
 
 docker:
-  - docker/**/*
+  - changed-files:
+      - any-glob-to-any-file: "docker/**/*"
+
+dependencies:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "pnpm-lock.yaml"
+          - "**/package.json"
