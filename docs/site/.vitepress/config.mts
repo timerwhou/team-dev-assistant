@@ -120,6 +120,7 @@ export default defineConfig({
             { text: "2. Upgrade to MCP v2", link: "/adr/0002-upgrade-to-mcp-v2" },
             { text: "3. Implement Skills as Native Extension", link: "/adr/0003-implement-skills-as-native-extension" },
             { text: "4. Align Release Versioning", link: "/adr/0004-align-release-versioning-with-milestones" },
+            { text: "6. Decouple Versioning from Milestones", link: "/adr/0006-decouple-versioning-from-milestones" },
           ],
         },
       ],
