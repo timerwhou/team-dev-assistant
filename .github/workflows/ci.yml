@@ -1,59 +1,106 @@
 name: CI
 
 on:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: read
+  pull-requests: read
+
 jobs:
+  # ---------- 变更检测：始终运行，判断要不要跑真正的 CI ----------
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      code: ${{ steps.filter.outputs.code }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            code:
+              - 'packages/**'
+              - 'apps/**'
+              - 'eval/**'
+              - 'docker/**'
+              - 'scripts/**'
+              - 'pnpm-lock.yaml'
+              - 'package.json'
+              - 'pnpm-workspace.yaml'
+              - 'tsconfig.base.json'
+              - '.github/workflows/ci.yml'
+
+  # ---------- 真正的 CI：只在 code 变更时执行 ----------
   typecheck:
     name: Typecheck
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v5
-
-      - uses: pnpm/action-setup@v6
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
         with:
           version: 10
-
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Typecheck all packages
-        run: pnpm -r --no-bail typecheck
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm -r --no-bail typecheck
 
   test:
     name: Unit Tests
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v5
-
-      - uses: pnpm/action-setup@v6
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
         with:
           version: 10
-
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: sudo apt-get update && sudo apt-get install -y ripgrep
+      - run: pnpm -r --no-bail --if-present test
+      - run: pnpm --filter @tda/cli dev -- /help
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+  # ---------- 聚合门禁：始终运行，作为唯一 Required check ----------
+  ci-gate:
+    name: CI / Required
+    needs: [changes, typecheck, test]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Aggregate result
+        run: |
+          echo "changes:   ${{ needs.changes.result }}"
+          echo "typecheck: ${{ needs.typecheck.result }}"
+          echo "test:      ${{ needs.test.result }}"
 
-      - name: Run tests
-        run: pnpm -r --no-bail --if-present test
+          if [ "${{ needs.changes.result }}" != "success" ]; then
+            echo "❌ changes job 失败"
+            exit 1
+          fi
 
-      - name: Install ripgrep
-        run: sudo apt-get update && sudo apt-get install -y ripgrep
+          if [ "${{ needs.typecheck.result }}" == "failure" ]; then
+            echo "❌ typecheck 失败"
+            exit 1
+          fi
 
-      - name: Smoke test CLI
-        run: pnpm --filter @tda/cli dev -- /help
+          if [ "${{ needs.test.result }}" == "failure" ]; then
+            echo "❌ test 失败"
+            exit 1
+          fi
+
+          echo "✅ 全部通过（或按需跳过）"
