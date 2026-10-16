@@ -1,7 +1,7 @@
 # 3. Implement Skills as Native MCP Extension via @olaservo/ext-skills
 
 Date: 2026-10-16
-Status: Proposed
+Status: Accepted
 
 ## Context and Problem Statement
 

@@ -34,6 +34,8 @@ export default defineConfig({
       { text: "包", link: "/packages/core" },
       { text: "应用", link: "/apps/cli" },
       { text: "开发", link: "/dev/eval" },
+      { text: "MCP", link: "/mcp/" },
+      { text: "部署", link: "/deploy/ghcr" },
       { text: "ADR", link: "/adr/0000-use-adrs" },
       { text: "设计", link: "/design/skills-migration" },
       {
@@ -82,7 +84,25 @@ export default defineConfig({
             { text: "Coordinator", link: "/apps/coordinator" },
           ],
         },
+      ],      "/mcp/": [
+        {
+          text: "MCP 集成",
+          items: [
+            { text: "总览", link: "/mcp/" },
+            { text: "客户端支持", link: "/mcp/client-compat" },
+            { text: "v1 → v2 迁移", link: "/mcp/migration-notes" },
+          ],
+        },
       ],
+      "/deploy/": [
+        {
+          text: "部署",
+          items: [
+            { text: "GHCR 镜像", link: "/deploy/ghcr" },
+          ],
+        },
+      ],
+
       "/dev/": [
         {
           text: "开发",

@@ -1,7 +1,7 @@
 # 4. Align Release Versioning with Milestone Planning
 
 Date: 2026-10-16
-Status: Proposed
+Status: Accepted
 
 ## Context and Problem Statement
 
