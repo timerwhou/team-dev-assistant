@@ -1,14 +1,27 @@
 {
+  "$schema": "https://raw.githubusercontent.com/k08200/mcp-probe/main/schemas/mcp-probe.sidecar.schema.json",
   "tools": {
     "read_file": {
-      "path": "package.json"
+      "input": {
+        "path": "package.json"
+      }
     },
     "search_code": {
-      "query": "dependencies"
+      "input": {
+        "query": "dependencies"
+      }
     },
     "list_issues": {
-      "owner": "timerwhou",
-      "repo": "team-dev-assistant"
+      "input": {
+        "owner": "timerwhou",
+        "repo": "team-dev-assistant"
+      },
+      "expect": {
+        "not_error_code": [
+          401,
+          403
+        ]
+      }
     }
   }
 }
