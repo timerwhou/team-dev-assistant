@@ -114,10 +114,59 @@ jobs:
           EVAL_SUBSET: critical
         run: pnpm eval
 
+
+  # ---------- Docker Build Check (防破坏) ----------
+  docker-build-check:
+    name: Docker Build Check
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+      - name: Build Docker Image (No Push)
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: docker/Dockerfile
+          push: false
+          tags: tda-test:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ---------- MCP Protocol Probe (防协议破裂) ----------
+  mcp-probe:
+    name: MCP Protocol Probe
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build MCP Server
+        run: pnpm --filter @tda/mcp-server build
+      - name: Run MCP Probe
+        run: |
+          npx -y @k08200/mcp-probe@latest \
+            node packages/mcp-server/dist/index.js \
+            --probe-tools \
+            --probe-resources \
+            --github-summary
+
   # ---------- 聚合门禁 ----------
   ci-gate:
     name: CI / Required
-    needs: [changes, typecheck, test, eval-gate]
+    needs: [changes, typecheck, test, eval-gate, docker-build-check, mcp-probe]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -128,6 +177,8 @@ jobs:
           echo "typecheck: ${{ needs.typecheck.result }}"
           echo "test:      ${{ needs.test.result }}"
           echo "eval-gate: ${{ needs.eval-gate.result }}"
+          echo "docker-build-check: ${{ needs.docker-build-check.result }}"
+          echo "mcp-probe: ${{ needs.mcp-probe.result }}"
 
           if [ "${{ needs.changes.result }}" != "success" ]; then
             echo "❌ changes job 失败"
@@ -146,6 +197,16 @@ jobs:
 
           if [ "${{ needs.eval-gate.result }}" == "failure" ]; then
             echo "❌ eval-gate 失败（Agent 能力退化）"
+            exit 1
+          fi
+
+          if [ "${{ needs.docker-build-check.result }}" == "failure" ]; then
+            echo "❌ docker-build-check 失败（Dockerfile 无法构建）"
+            exit 1
+          fi
+
+          if [ "${{ needs.mcp-probe.result }}" == "failure" ]; then
+            echo "❌ mcp-probe 失败（MCP 协议或工具暴露异常）"
             exit 1
           fi
 

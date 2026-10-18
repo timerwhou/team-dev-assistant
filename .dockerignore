@@ -4,13 +4,9 @@ dist
 **/dist
 .git
 .github
-.env
-.env.*
-!.env.example
 .traces
-.logs
-eval/report/*.json
+.env
+.env.local
 *.log
-.DS_Store
-docs
-docker/compose.yml
+docs/site/.vitepress/dist
+docs/site/.vitepress/cache

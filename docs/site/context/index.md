@@ -1,3 +1,5 @@
+> **延伸阅读**：Context Engineering 解决了“工具结果太长”的压缩问题，而 [Team Playbook](/guide/playbook) 解决了“模型缺乏项目背景”的幻觉问题。两者结合，构成了完整的上下文注入闭环。
+
 # Context Engineering
 
 显式化上下文组装层，实现工具结果压缩与 Token 预算控制。
