@@ -1,3 +1,4 @@
+import { savePlaybookEntry } from "@tda/core";
 import "@tda/core/lib/env";
 import { A2AClient } from "@tda/a2a";
 import type { Task } from "@tda/a2a";
@@ -44,13 +45,33 @@ async function waitForCompletionWithHITL(
       console.log(`   ${task.pendingElicit?.question}`);
 
       const rl = readline.createInterface({ input: stdin, output: stdout });
-      const answer = await rl.question("   请输入 (y/n): ");
+            const answer = await rl.question("   请输入 (y/n): ");
       rl.close();
+
+      const isConfirmed = answer.toLowerCase() === "y";
+
+      if (isConfirmed) {
+        // 拦截沉淀 Hook：人类确认了 Agent 的提议，这构成了架构记忆
+        try {
+          const factTitle = task.pendingElicit?.question?.slice(0, 30) || "HITL 确认的业务约束";
+          savePlaybookEntry({
+            type: "fact",
+            domain: "hitl-capture",
+            title: `HITL 确认：${factTitle}`,
+            decision: task.pendingElicit?.question || "人类确认了 Agent 的修改提案",
+            rationale: "通过 HITL 交互确认，人类认可了此方案，作为业务基线沉淀。",
+            content: `Agent 提议：${task.pendingElicit?.question}\n\n人类操作：确认通过 (y)`,
+          });
+          console.log(`   📚 [Playbook] 已自动沉淀决策到 docs/playbook/`);
+        } catch (e) {
+          console.error("   ⚠️ [Playbook] 沉淀失败:", e);
+        }
+      }
 
       console.log(`   ✅ 已提交人类输入，Agent 继续执行...`);
 
       await client.resumeTask(task.requestState!, {
-        confirm: answer.toLowerCase() === "y",
+        confirm: isConfirmed,
       });
     }
 
