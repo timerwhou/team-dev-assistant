@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.0.0](https://github.com/timerwhou/team-dev-assistant/compare/v0.6.1...v1.0.0) (2026-10-18)
+
+
+### Features
+
+* v1.0.0 Team Playbook 架构基座与记忆闭环 ([#80](https://github.com/timerwhou/team-dev-assistant/issues/80)) ([ffafec3](https://github.com/timerwhou/team-dev-assistant/commit/ffafec3258ff485f413f2fd8429acff3dd8a7998))
+* v1.0.0 生产级发布候选版 (Team Playbook 架构记忆体) ([#85](https://github.com/timerwhou/team-dev-assistant/issues/85)) ([ba4ed2e](https://github.com/timerwhou/team-dev-assistant/commit/ba4ed2e2d22b15caf93d57a19630695f849c5982))
+
+
+### Miscellaneous Chores
+
+* release 1.0.0 ([1f5d820](https://github.com/timerwhou/team-dev-assistant/commit/1f5d8209426082d35fc817af95bcde8880be22c2))
+
 ## [0.6.1](https://github.com/timerwhou/team-dev-assistant/compare/v0.6.0...v0.6.1) (2026-10-18)
 
 
