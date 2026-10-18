@@ -2,6 +2,7 @@ import OpenAI from "openai";
 import { tracedChatCompletion, getModel } from "../lib/llm";
 import { recorder } from "../trace/recorder";
 import { compressToolResult } from "../context/compressor";
+import { estimateCostUSD } from "../trace/pricing";
 import type { CompressorOptions } from "../context/types";
 import type { ToolCallInput, ToolCallResult } from "./types";
 
@@ -65,6 +66,12 @@ export async function runAgent(
     if (u) {
       totalPromptTokens += u.prompt_tokens ?? 0;
       totalCompletionTokens += u.completion_tokens ?? 0;
+      const cost = estimateCostUSD(
+        getModel(),
+        u.prompt_tokens ?? 0,
+        u.completion_tokens ?? 0
+      );
+      if (cost) totalCostUSD += cost;
     }
     return res;
   };

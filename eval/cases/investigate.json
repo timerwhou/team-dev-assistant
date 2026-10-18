@@ -3,23 +3,37 @@
     "id": "investigate-no-sql",
     "skill": "investigate",
     "input": "项目里有没有 SQL 注入",
-    "mustContain": ["结论"],
-    "mustNotContain": ["达到了最大步数", "连续多轮工具调用失败"],
+    "mustContain": [
+      "结论"
+    ],
+    "mustNotContain": [
+      "达到了最大步数",
+      "连续多轮工具调用失败"
+    ],
     "description": "验证 Agent 能收敛并给出结论"
   },
   {
     "id": "investigate-command-injection",
     "skill": "investigate",
     "input": "search_code 工具是否存在命令注入漏洞",
-    "mustContainAny": ["execFile", "参数数组", "无命令注入", "已经修复"],
+    "mustContainAny": [
+      "execFile",
+      "参数数组",
+      "无命令注入",
+      "已经修复"
+    ],
     "description": "验证 Agent 能识别 execFile 修复"
   },
   {
     "id": "investigate-convergence",
     "skill": "investigate",
-    "input": "找出项目里所有 TypeScript 文件数量",
-    "mustContain": ["结论"],
-    "mustNotContain": ["达到了最大步数"],
-    "description": "验证 Agent 不会陷入打转"
+    "input": "用 search_code 统计项目里 .ts 文件的数量，不要读文件内容",
+    "mustContain": [
+      "结论"
+    ],
+    "mustNotContain": [
+      "达到了最大步数"
+    ],
+    "description": "验证 Agent 能用 search_code 高效统计"
   }
 ]
