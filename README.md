@@ -8,6 +8,25 @@
 [![Eval](https://github.com/timerwhou/team-dev-assistant/actions/workflows/eval.yml/badge.svg)](https://github.com/timerwhou/team-dev-assistant/actions/workflows/eval.yml)
 [![CodeQL](https://github.com/timerwhou/team-dev-assistant/actions/workflows/codeql.yml/badge.svg)](https://github.com/timerwhou/team-dev-assistant/actions/workflows/codeql.yml)
 
+## Eval Gate（质量门禁）
+
+基于 Trace 的回归门禁，确保 Prompt 改动不会导致 Agent 能力退化。
+
+### 核心能力
+
+- **轨迹断言**：不只测最终输出，还测工具链 / 步数 / 收口原因
+- **CI 门禁**：PR 时自动跑 critical 子集（约 106s），退化阻塞合并
+- **质量仪表盘**：文档站展示最新评估报告
+
+### 收益（v0.5.0 实测）
+
+| 指标 | 值 |
+|---|---|
+| Critical 子集通过率 | **3/3（100%）** |
+| CI 耗时 | 1m46s |
+
+详见 [Eval Gate 文档](https://timerwhou.github.io/team-dev-assistant/eval/)。
+
 ## Context Engineering
 
 在 `@tda/core` 显式化上下文组装层，实现工具结果压缩与 Token 预算控制。
