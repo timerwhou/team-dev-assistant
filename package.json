@@ -13,7 +13,7 @@
     "docs:dev": "pnpm docs:gen && vitepress dev docs/site",
     "docs:build": "pnpm docs:gen && vitepress build docs/site",
     "docs:preview": "vitepress preview docs/site",
-    "docs:gen": "node scripts/generate-skills-docs.mjs"
+    "docs:gen": "node scripts/generate-skills-docs.mjs && node scripts/generate-eval-docs.mjs"
   },
   "devDependencies": {
     "@commitlint/config-conventional": "^21.2.3",

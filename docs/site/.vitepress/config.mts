@@ -36,6 +36,7 @@ export default defineConfig({
       { text: "开发", link: "/dev/eval" },
       { text: "MCP", link: "/mcp/" },
       { text: "Context", link: "/context/" },
+      { text: "Eval", link: "/eval/" },
       { text: "部署", link: "/deploy/ghcr" },
       { text: "ADR", link: "/adr/0000-use-adrs" },
       { text: "设计", link: "/design/skills-migration" },
@@ -94,7 +95,15 @@ export default defineConfig({
             { text: "v1 → v2 迁移", link: "/mcp/migration-notes" },
           ],
         },
-      ],      "/context/": [
+      ],      "/eval/": [
+        {
+          text: "质量仪表盘",
+          items: [
+            { text: "总览", link: "/eval/" },
+          ],
+        },
+      ],
+      "/context/": [
         {
           text: "Context Engineering",
           items: [
