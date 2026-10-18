@@ -1,12 +1,24 @@
-# 评估集
+# 评估集与 Eval Gate
 
-防止 prompt 改动导致能力退化。
+评估集用于防止 Prompt 或 Context 改动导致 Agent 能力静默退化。
 
-## 运行
+## 运行评估
 
 ```bash
+# 跑全量评估（约 10 分钟）
 pnpm eval
+
+# 只跑 critical 子集（CI 门禁使用，约 106s）
+EVAL_SUBSET=critical pnpm eval
 ```
+
+## 轨迹断言（Trace Evaluation）
+
+评估集不仅检查最终输出，还通过 `recorder` 捕获 Trace 事件，断言：
+- **stopReason**：Agent 是否正常收口。
+- **mustUseTools**：Agent 是否调用了预期的工具（如 `search_code`）。
+- **maxToolCalls**：是否陷入打转（步数超标）。
+- **mustHaveContextBuild**：长任务中是否触发了 Context 压缩。
 
 ## 用例结构
 
@@ -16,23 +28,13 @@ pnpm eval
   "skill": "investigate",
   "input": "项目里有没有 SQL 注入",
   "mustContain": ["结论"],
-  "mustNotContain": ["达到了最大步数"],
-  "description": "验证 Agent 能收敛并给出结论"
+  "expect": {
+    "mustUseTools": ["search_code"],
+    "maxToolCalls": 10
+  }
 }
 ```
 
-## 断言类型
+## CI 门禁
 
-| 字段 | 含义 |
-|---|---|
-| `mustContain` | 输出**必须**包含所有子串 |
-| `mustNotContain` | 输出**必须不**包含任何子串 |
-| `mustContainAny` | 输出**至少**包含一个子串 |
-
-## 输出
-
-```bash
-cat eval/report/latest.json
-```
-
-JSON 报告含：通过率、每个用例的耗时、工具调用数、失败原因。
+在 GitHub Actions 的 `eval-gate` job 中，如果 critical 用例失败，PR 将被阻塞。质量仪表盘会展示在文档站的 [Eval](/eval/) 页面。

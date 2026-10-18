@@ -1,6 +1,6 @@
-# A2A v1.1 双向流与 HITL
+# A2A v1.1 BiDi & HITL
 
-当前项目基于 A2A 协议 v1.1，支持 WebSocket 双向流（BiDi Streaming）和人类在环（Human-in-the-Loop）。
+当前项目基于 A2A 协议 v1.1，支持 WebSocket BiDi Streaming 与 HITL 模式。
 
 ## 架构图
 
@@ -11,7 +11,7 @@ Coordinator (CLI)          Reviewer Agent
       |                           | (发现需要澄清)
       |<-- 2. input-required -----|
       |                           |
- [ 人类 CLI 介入 ]                |
+ [ CLI 提示 ]                     |
  输入 y/n                         |
       |                           |
       |--- 3. tasks/resume ------>|
@@ -26,7 +26,7 @@ Coordinator (CLI)          Reviewer Agent
 |---|---|---|
 | **传输层** | HTTP + SSE（单向） | WebSocket（双向） |
 | **状态获取** | 客户端主动轮询 `tasks/get` | 服务端推送 + WebSocket 长连接 |
-| **人类介入** | 无 | 触发 `input-required`，携带 `requestState` 恢复 |
+| **人工介入** | 无 | 触发 `input-required`，携带 `requestState` 恢复 |
 | **兼容性** | 完全支持 | 向下兼容 v1.0 |
 
 ## 如何体验 HITL
@@ -36,7 +36,6 @@ Coordinator (CLI)          Reviewer Agent
 pnpm start:all
 
 # 2. 在另一个终端发送带 [elicit] 的任务
-# 注意：当前 coordinator 已经支持 CLI 交互
 pnpm --filter @tda/coordinator dev "[elicit] package.json"
 ```
 

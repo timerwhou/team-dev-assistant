@@ -1,6 +1,6 @@
-# 可观测性
+# Trace 可观测性
 
-LLM/Agent/Tool 三类 trace event，JSONL 输出到 `.traces/`。
+LLM / Agent / Context 三类 Trace 事件，以 JSONL 格式输出到 `.traces/`。
 
 ## 事件类型
 
@@ -10,10 +10,8 @@ LLM/Agent/Tool 三类 trace event，JSONL 输出到 `.traces/`。
 |---|---|
 | `model` | 模型名 |
 | `durationMs` | 耗时 |
-| `promptTokens` / `completionTokens` / `totalTokens` | Token 数 |
+| `promptTokens` / `completionTokens` | Token 数 |
 | `costUSD` | 估算成本 |
-| `hasTools` / `jsonMode` | 调用模式 |
-| `error` | 错误信息（若有） |
 
 ### `agent_run`
 
@@ -21,17 +19,17 @@ LLM/Agent/Tool 三类 trace event，JSONL 输出到 `.traces/`。
 |---|---|
 | `steps` | 步数 |
 | `toolCalls` | 工具调用总数 |
-| `totalPromptTokens` / `totalCompletionTokens` / `totalCostUSD` | 汇总 |
 | `stopReason` | 收口原因 |
+| `contextBuilds` | 压缩总次数及 before/after tokens |
 
-### `tool_call`
+### `context_build`
 
 | 字段 | 说明 |
 |---|---|
-| `name` | 工具名 |
-| `durationMs` | 耗时 |
-| `ok` | 是否成功 |
-| `error` | 错误信息 |
+| `layer` | `instruction` / `tool` / `history` |
+| `action` | `keep` / `truncate` / `drop` |
+| `beforeTokens` / `afterTokens` | 压缩前后 Token 数 |
+| `reason` | 触发原因（如 read_file 超过 500 行） |
 
 ## 统计
 
@@ -39,10 +37,4 @@ LLM/Agent/Tool 三类 trace event，JSONL 输出到 `.traces/`。
 bash scripts/trace-stats.sh
 ```
 
-输出：LLM 调用次数、总 token、总成本、平均延迟。
-
-## 关闭
-
-```bash
-TDA_TRACE=0 pnpm dev "/review apps/cli/src/index.ts"
-```
+输出 LLM 调用次数、总 Token、平均延迟、上下文压缩比等数据。

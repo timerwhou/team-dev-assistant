@@ -1,6 +1,6 @@
-# 容器化
+# 容器化部署
 
-`docker compose` 一键起多 Agent。
+通过 `docker compose` 一键启动多 Agent 环境。
 
 ## 启动
 
@@ -15,20 +15,16 @@ docker compose down
 
 | 服务 | 端口 | 说明 |
 |---|---|---|
-| `reviewer` | 4101 | 代码评审 Agent |
-| `investigator` | 4102 | 问题排查 Agent |
-| `coordinator` | — | 协调器，跑一次退出 |
+| `reviewer` | 4101 | 代码评审 Agent（HTTP + WebSocket） |
+| `investigator` | 4102 | 问题排查 Agent（HTTP + WebSocket） |
+| `coordinator` | — | 协调器（跑完即退出） |
 
-## 设计要点
+## 镜像发布
 
-- **单阶段构建**：简单可靠，避开 pnpm 软链坑
-- **healthcheck**：`start_period: 30s`，等 Agent 就绪
-- **depends_on**：`condition: service_healthy`，等两个 Agent healthy
-- **volume 挂载**：宿主机项目挂到容器 `/workspace:ro`
-- **密钥注入**：`env_file: ../.env`，不 COPY 进镜像
+每次 GitHub Release 自动推送镜像到 GHCR。
 
-## 启动时间
+```bash
+docker pull ghcr.io/timerwhou/team-dev-assistant:latest
+```
 
-- 首次 `build`：~90s
-- 再次 `build`：~1s（缓存）
-- `up -d` 到 healthy：~6s
+详见 [GHCR 部署文档](/deploy/ghcr)。

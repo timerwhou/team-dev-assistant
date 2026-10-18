@@ -1,37 +1,15 @@
-# 0. Use Architecture Decision Records
+# 0. 采用 ADR 记录架构决策
 
-Date: 2026-10-16
-Status: Accepted
+## 背景
 
-## Context and Problem Statement
+软件研发中，关键的技术选型和架构变更需要被系统化记录。传统的口头沟通或散落的 Wiki 会导致上下文丢失，新成员难以理解系统演进的原因。
 
-We need to record significant architectural and process decisions for future reference. This includes major tooling choices, significant architectural changes, and process decisions.
+## 设计目标
 
-## Decision Drivers
+- **可追溯性**：记录为什么做出某项决策，而不仅仅是记录结论。
+- **与代码同源**：文档随代码库一同进行版本控制（Git），保持一致性。
+- **结构统一**：采用业界标准的 MADR（Markdown Any Decision Records）格式。
 
-- Decisions must be discoverable by both humans and agents
-- Need context and rationale, not just the decision
-- Industry standard format preferred
-- Git-tracked and versioned with code
+## 方案设计
 
-## Considered Options
-
-- Flat list in README.md
-- Wiki or external documentation system
-- Architecture Decision Records (ADRs)
-
-## Decision Outcome
-
-Chosen option: "Architecture Decision Records", because:
-- Industry standard format (widely recognized in software engineering)
-- Human and agent readable (markdown format)
-- Git-tracked (versioned with code, shows evolution)
-- Includes context, alternatives, and consequences
-
-We will use the MADR format.
-
-## Consequences
-
-- Good: Decisions are documented with full context
-- Good: Git history shows when and why decisions were made
-- Neutral: Requires discipline to create ADRs for significant decisions
+本项目全面采用 ADR 来沉淀架构决策。所有重要变更（如引入新技术、重构核心模块）必须在 `docs/adr/` 下新建对应编号的记录。每篇 ADR 需包含背景、设计目标、方案原理及影响评估。
