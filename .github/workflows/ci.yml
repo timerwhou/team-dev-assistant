@@ -160,13 +160,7 @@ jobs:
       - name: Run MCP Probe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          which rg || echo "rg not found"
-          echo "Token length: ${#GITHUB_TOKEN}"
-          npx -y @k08200/mcp-probe@latest \\
-            node packages/mcp-server/dist/index.js \\
-            --probe-tools \\
-            --github-summary
+        run: npx -y @k08200/mcp-probe@latest node packages/mcp-server/dist/index.js --probe-tools --github-summary
 
   # ---------- 聚合门禁 ----------
   ci-gate:
