@@ -10,7 +10,7 @@ permissions:
   pull-requests: read
 
 jobs:
-  # ---------- 变更检测：始终运行，判断要不要跑真正的 CI ----------
+  # ---------- 变更检测 ----------
   changes:
     name: Detect changes
     runs-on: ubuntu-latest
@@ -35,7 +35,7 @@ jobs:
               - 'tsconfig.base.json'
               - '.github/workflows/ci.yml'
 
-  # ---------- 真正的 CI：只在 code 变更时执行 ----------
+  # ---------- Typecheck ----------
   typecheck:
     name: Typecheck
     needs: changes
@@ -54,6 +54,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm -r --no-bail typecheck
 
+  # ---------- Unit Tests ----------
   test:
     name: Unit Tests
     needs: changes
@@ -74,10 +75,36 @@ jobs:
       - run: pnpm -r --no-bail --if-present test
       - run: pnpm --filter @tda/cli dev -- /help
 
-  # ---------- 聚合门禁：始终运行，作为唯一 Required check ----------
+  # ---------- Eval Gate（只在 code 变更时跑 critical 子集） ----------
+  eval-gate:
+    name: Eval Gate
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: sudo apt-get update && sudo apt-get install -y ripgrep
+      - name: Run critical eval subset
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_BASE_URL: ${{ secrets.OPENAI_BASE_URL }}
+          MODEL: ${{ secrets.MODEL }}
+          EVAL_SUBSET: critical
+        run: pnpm eval
+
+  # ---------- 聚合门禁 ----------
   ci-gate:
     name: CI / Required
-    needs: [changes, typecheck, test]
+    needs: [changes, typecheck, test, eval-gate]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -87,6 +114,7 @@ jobs:
           echo "changes:   ${{ needs.changes.result }}"
           echo "typecheck: ${{ needs.typecheck.result }}"
           echo "test:      ${{ needs.test.result }}"
+          echo "eval-gate: ${{ needs.eval-gate.result }}"
 
           if [ "${{ needs.changes.result }}" != "success" ]; then
             echo "❌ changes job 失败"
@@ -100,6 +128,11 @@ jobs:
 
           if [ "${{ needs.test.result }}" == "failure" ]; then
             echo "❌ test 失败"
+            exit 1
+          fi
+
+          if [ "${{ needs.eval-gate.result }}" == "failure" ]; then
+            echo "❌ eval-gate 失败（Agent 能力退化）"
             exit 1
           fi
 
