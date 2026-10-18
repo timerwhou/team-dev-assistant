@@ -41,7 +41,9 @@ export function parseSkillArgs(
 }
 
 async function main() {
-  const raw = process.argv.slice(2).join(" ").trim();
+  // 过滤掉 pnpm 传递的 "--" 分隔符，保证解析稳定
+  const rawArgs = process.argv.slice(2).filter(arg => arg !== "--");
+  const raw = rawArgs.join(" ").trim();
 
   // === 拦截 /inject ===
   if (raw.startsWith("/inject ")) {
