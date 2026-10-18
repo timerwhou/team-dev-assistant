@@ -15,6 +15,8 @@ export type EvalCase = {
   maxSteps?: number;
   /** 用例说明 */
   description?: string;
+  /** 是否核心用例（EVAL_SUBSET=critical 时只跑这些） */
+  critical?: boolean;
   /** 轨迹断言（从 Trace 数据里检查） */
   expect?: {
     /** 期望的收口原因（AgentRunTrace.stopReason） */

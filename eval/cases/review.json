@@ -3,21 +3,32 @@
     "id": "review-simple",
     "skill": "review",
     "input": "function add(a, b) { return a + b; }",
-    "mustContain": ["结论", "评分"],
-    "description": "简单函数评审，应给评分"
+    "mustContain": [
+      "结论",
+      "评分"
+    ],
+    "description": "简单函数评审，应给评分",
+    "critical": true
   },
   {
     "id": "review-sql-injection",
     "skill": "review",
     "input": "function getUser(id) { const sql = \"SELECT * FROM users WHERE id = \" + id; return db.query(sql); }",
-    "mustContainAny": ["注入", "参数化", "injection", "安全隐患"],
+    "mustContainAny": [
+      "注入",
+      "参数化",
+      "injection",
+      "安全隐患"
+    ],
     "description": "应识别 SQL 注入风险"
   },
   {
     "id": "review-empty",
     "skill": "review",
     "input": "const x = 1;",
-    "mustContain": ["结论"],
+    "mustContain": [
+      "结论"
+    ],
     "description": "极简代码也应给出结论"
   }
 ]

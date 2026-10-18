@@ -169,13 +169,20 @@ async function runCase(c: EvalCase): Promise<EvalResult> {
 
 async function main() {
   const files = fs.readdirSync(casesDir).filter((f) => f.endsWith(".json"));
-  const cases: EvalCase[] = [];
+  let cases: EvalCase[] = [];
   for (const f of files) {
     const content = JSON.parse(fs.readFileSync(path.join(casesDir, f), "utf-8"));
     cases.push(...content);
   }
 
-  console.log(`\n🧪 评估集：${cases.length} 个用例\n`);
+  // 支持 EVAL_SUBSET=critical 只跑核心用例
+  const subset = process.env.EVAL_SUBSET;
+  if (subset === "critical") {
+    cases = cases.filter((c) => c.critical);
+    console.log(`\n🧪 评估集（critical subset）：${cases.length} 个用例\n`);
+  } else {
+    console.log(`\n🧪 评估集：${cases.length} 个用例\n`);
+  }
 
   const results: EvalResult[] = [];
   const start = Date.now();
