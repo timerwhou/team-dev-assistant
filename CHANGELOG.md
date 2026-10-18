@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/timerwhou/team-dev-assistant/compare/v0.5.0...v0.6.0) (2026-10-18)
+
+
+### Features
+
+* **a2a:** 支持 WebSocket 传输与多接口声明 ([#65](https://github.com/timerwhou/team-dev-assistant/issues/65)) ([d7c46bb](https://github.com/timerwhou/team-dev-assistant/commit/d7c46bbaed73dcdad137b676fbdfe9e8abccd1a4))
+
 ## [0.5.0](https://github.com/timerwhou/team-dev-assistant/compare/v0.4.0...v0.5.0) (2026-10-18)
 
 
