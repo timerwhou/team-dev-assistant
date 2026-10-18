@@ -75,6 +75,19 @@ jobs:
       - run: pnpm -r --no-bail --if-present test
       - run: pnpm --filter @tda/cli dev -- /help
 
+      - name: Verify Playbook Sync
+        run: |
+          # 运行同步命令（已具备幂等性）
+          pnpm --filter @tda/cli dev "/sync-facts"
+          
+          # 检查是否产生了未提交的变更
+          if [ -n "$(git status --porcelain docs/playbook/)" ]; then
+            echo "❌ 发现未同步的 @fact 注释。请运行 /sync-facts 并提交生成的 Playbook 文件。"
+            git diff docs/playbook/
+            exit 1
+          fi
+          echo "✅ Playbook 资产与代码中的 @fact 注释完全一致。"
+
   # ---------- Eval Gate（只在 code 变更时跑 critical 子集） ----------
   eval-gate:
     name: Eval Gate
