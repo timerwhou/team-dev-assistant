@@ -96,7 +96,16 @@ supersedes: []
 ${fact.content}`;
 
       // 只有内容不存在或发生变化时才写入，防止 CI 中产生无意义的 diff
-      if (!fs.existsSync(filePath) || fs.readFileSync(filePath, "utf-8") !== content) {
+      let shouldWrite = true;
+      try {
+        const existing = fs.readFileSync(filePath, "utf-8");
+        shouldWrite = existing !== content;
+      } catch (e: any) {
+        // 如果文件不存在 (ENOENT)，说明是新文件，直接写入；如果是其他错误则抛出
+        if (e.code !== "ENOENT") throw e;
+      }
+
+      if (shouldWrite) {
         fs.writeFileSync(filePath, content);
       }
       count++;

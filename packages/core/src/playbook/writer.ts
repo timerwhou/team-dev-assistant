@@ -18,7 +18,7 @@ export function savePlaybookEntry(params: SavePlaybookParams): string {
 
   const timestamp = Date.now();
   const safeTitle = params.title.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, "-").slice(0, 20);
-  const fileName = `fact-${timestamp}-${safeTitle}.md`;
+  const fileName = path.basename(`fact-${timestamp}-${safeTitle}.md`);
   const filePath = path.join(dir, fileName);
   const today = new Date().toISOString().split("T")[0];
 
