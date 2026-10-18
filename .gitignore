@@ -16,3 +16,6 @@ docs/site/skills/_sidebar.json
 
 # Benchmark 结果（可重现，不进 git）
 eval/benchmark/results/*.json
+
+# 自动生成的 eval 文档
+docs/site/eval/*.md
