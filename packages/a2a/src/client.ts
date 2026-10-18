@@ -1,5 +1,5 @@
 import WebSocket from "ws";
-import type { AgentCard, Task, Message, WsRequest, WsResponse } from "./types";
+import type { AgentCard, Task, Message, WsRequest, WsResponse, RequestState } from "./types";
 
 type JsonRpcResponse<T> = {
   jsonrpc: "2.0";
@@ -58,6 +58,10 @@ export class A2AClient {
 
   async getTask(taskId: string): Promise<Task> {
     return this.rpc<Task>("tasks/get", { id: taskId });
+  }
+
+  async resumeTask(requestState: RequestState, inputResponses: Record<string, unknown>): Promise<Task> {
+    return this.rpc<Task>("tasks/resume", { requestState, inputResponses });
   }
 
   async waitForCompletion(taskId: string, timeoutMs = 120000): Promise<Task> {
