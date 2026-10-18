@@ -8,6 +8,18 @@
 pnpm dev "/<skill> [参数]"
 ```
 
+## 架构记忆体工具
+
+### 导出背景包 (/inject)
+```bash
+pnpm dev "/inject 我要做一个订单消息推送"
+```
+
+### 扫描代码入库 (/sync-facts)
+```bash
+pnpm dev "/sync-facts"
+```
+
 ## 示例
 
 ```bash

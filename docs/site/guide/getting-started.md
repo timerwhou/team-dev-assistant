@@ -47,6 +47,21 @@ pnpm --filter @tda/coordinator dev "[elicit] package.json"
 ```
 执行后，终端会提示 `🤖 Agent 需要澄清：你确定要让我评审这个文件吗？`，输入 `y` 后 Agent 会恢复执行并输出结果。
 
+### 体验架构记忆体（Team Playbook）
+
+1. **提取外部模型背景包**
+   ```bash
+   pnpm dev "/inject 我要做一个订单推送功能"
+   ```
+   终端会输出一段包含 Kafka 和 CostService 的决策理由（Rationale），你可以直接复制给外部网页模型。
+
+2. **从代码中沉淀 Fact**
+   ```bash
+   # 在某个代码文件里加一行注释：// @fact [auth] 必须走 JWT
+   pnpm dev "/sync-facts"
+   ```
+   系统会自动扫描注释，并在 `docs/playbook/` 生成标准的 Markdown 资产。
+
 ### 评估集（Eval Gate）
 
 ```bash

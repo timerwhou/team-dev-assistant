@@ -1,112 +1,125 @@
 # Team Dev Assistant
 
-## 🧠 Team Playbook (Architecture Memory)
+[![CI](https://github.com/timerwhou/team-dev-assistant/actions/workflows/ci.yml/badge.svg)](https://github.com/timerwhou/team-dev-assistant/actions/workflows/ci.yml)
+[![release](https://img.shields.io/github/v/release/timerwhou/team-dev-assistant?color=orange&label=release)](https://github.com/timerwhou/team-dev-assistant/releases/latest)
+[![Docker](https://img.shields.io/badge/Docker-ghcr.io%2Ftimerwhou%2Fteam--dev--assistant-blue?logo=docker)](https://github.com/timerwhou/team-dev-assistant/pkgs/container/team-dev-assistant)
+[![Eval](https://img.shields.io/badge/Eval-passing-brightgreen)](https://timerwhou.github.io/team-dev-assistant/eval/)
+[![CodeQL](https://img.shields.io/badge/CodeQL-passing-brightgreen)](https://github.com/timerwhou/team-dev-assistant/security/code-scanning)
+
+**面向 AI Agent 研发的团队级架构记忆体** —— 统一沉淀业务事实与技术规约，消除跨模型/跨工作流认知偏差。
+
+## 🧠 核心引擎：Team Playbook (Architecture Memory)
+
 **1.0.0 核心跃升：从“单次执行工具”变为“具备自演进架构记忆的研发基座”。**
-- **捕获**：开发者通过 `// @fact` 注释或 HITL 确认自动沉淀业务事实。
-- **约束**：包含决策(Decision)与否决方案(Alternatives)的结构化资产，强制约束 AI 幻觉。
+
+- **捕获**：开发者通过 `// @fact` 注释或 HITL 确认，自动沉淀业务事实与决策。
+- **约束**：包含决策 (Decision) 与 否决方案 (Alternatives) 的结构化资产，强制约束 AI 幻觉。
 - **注入**：通过 `/inject` 导出外部模型背景包，或通过 MCP 协议供内部 IDE 自动读取。
 
+### 架构一览
 
-> 面向研发团队的 AI Agent 工具集：支持 CLI / MCP / A2A 三种接入，具备多 Agent 协作、Context Engineering、Eval Regression Gate 与 HITL 能力，开箱即用。
-
-[![CI](https://github.com/timerwhou/team-dev-assistant/actions/workflows/ci.yml/badge.svg)](https://github.com/timerwhou/team-dev-assistant/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/v/release/timerwhou/team-dev-assistant)](https://github.com/timerwhou/team-dev-assistant/releases)
-[![Docker](https://img.shields.io/badge/ghcr.io-timerwhou%2Fteam--dev--assistant-blue?logo=docker&logoColor=white)](https://github.com/timerwhou/team-dev-assistant/pkgs/container/team-dev-assistant)
-[![Eval](https://github.com/timerwhou/team-dev-assistant/actions/workflows/eval.yml/badge.svg)](https://github.com/timerwhou/team-dev-assistant/actions/workflows/eval.yml)
-[![CodeQL](https://github.com/timerwhou/team-dev-assistant/actions/workflows/codeql.yml/badge.svg)](https://github.com/timerwhou/team-dev-assistant/actions/workflows/codeql.yml)
-
-## Context Engineering
-
-在 `@tda/core` 显式化上下文组装层，实现 Tool Context 压缩与 Token 预算控制。
-
-| 用例 | 无压缩 | 有压缩 | 节省 |
-|---|---|---|---|
-| investigate-convergence | 240,160 tokens | 3,830 tokens | **-98.4%** |
-| investigate-no-sql | 55,594 tokens | 4,969 tokens | **-91.1%** |
-
-详见 [Context Engineering 文档](https://timerwhou.github.io/team-dev-assistant/context/)。
-
-## Eval Gate
-
-基于 Trace 的回归门禁，确保 Prompt 改动不会导致 Agent 能力退化。
-
-- **轨迹断言**：不只测最终输出，还测工具链 / 步数 / 收口原因
-- **CI 门禁**：PR 时自动跑 critical 子集（约 106s），退化阻塞合并
-- **质量仪表盘**：文档站展示最新评估报告
-
-详见 [Eval Gate 文档](https://timerwhou.github.io/team-dev-assistant/eval/)。
-
-## A2A v1.1 BiDi & HITL
-
-基于 A2A 协议 v1.1，支持 WebSocket BiDi Streaming 与 HITL。
-
-- **Elicitation**：Agent 在执行中遇到歧义，通过 Elicitation 暂停任务并向 CLI 提问
-- **MRTR**：人工输入后，任务通过 MRTR 语义恢复，从断点继续执行
-- **协议兼容**：Agent Card 同时声明 HTTP 和 WebSocket 接口，兼容 v1.0 客户端
-
-详见 [A2A 文档](https://timerwhou.github.io/team-dev-assistant/a2a/)。
-
-## 架构
-
-```
-packages/
-  core/          纯逻辑层（LLM / Agent / Context / Schema / trace）
-  tools/         工具集（read_file / search_code / list_issues）
-  skills/        Skill 系统（review / investigate / issues）
-  a2a/           A2A 协议（server + client + WebSocket）
-  mcp-server/    MCP Server（Tools + Prompts + Resources）
-apps/
-  cli/           命令行入口
-  reviewer/      代码评审 Agent（A2A）
-  investigator/  问题排查 Agent（A2A）
-  coordinator/   多 Agent 协调器（支持 HITL）
-eval/            评估集（带 Eval Gate）
+```text
+[ 开发者 / IDE / 外部大模型 ]
+       │              │
+  (MCP 自动注入)   (CLI /inject 注入)
+       │              │
+       ▼              ▼
+┌───────────────────────────────┐
+│        Team Playbook          │
+│ (docs/playbook: Fact / Stack) │
+│ - decision / rationale 决策   │
+└───────────────────────────────┘
+       ▲              ▲
+       │              │
+ (HITL 确认沉淀)  (代码 @fact 扫描)
+       │              │
+┌───────────────────────────────┐
+│          Agent Loop           │
+│ (Coordinator / Eval / Tools)  │
+└───────────────────────────────┘
 ```
 
-## Docker
+## 🚀 全栈接入生态
 
+本项目提供多形态接入，满足不同研发场景的需求：
+
+### 1. 作为 MCP Server（原生支持 Skills Extension）
+本项目是首批原生实现 **SEP-2640 Skills Extension** 的 MCP Server 之一。
+- **Resources**：暴露 `project://playbook`，IDE 自动读取架构约束。
+- **Skills**：提供 `/review`、`/investigate`、`/issues` 等可分发的 AI 资产。
+- **Tools / Prompts**：提供基础代码检索与评审模板。
+
+**Cursor / Windsurf 接入**：
+在 `~/.cursor/mcp.json` 中添加：
+```json
+{
+  "mcpServers": {
+    "team-dev-assistant": {
+      "command": "npx",
+      "args": ["-y", "@tda/mcp-server"],
+      "env": { "OPENAI_API_KEY": "your-api-key" }
+    }
+  }
+}
+```
+
+**Claude Code 接入**：
 ```bash
-docker pull ghcr.io/timerwhou/team-dev-assistant:latest
-
-docker run --rm -e OPENAI_API_KEY=sk-xxx \
-  ghcr.io/timerwhou/team-dev-assistant:latest \
-  pnpm --filter @tda/cli dev -- /help
+claude mcp add-json team-dev-assistant '{
+  "type": "stdio",
+  "command": "npx",
+  "args": ["-y", "@tda/mcp-server"],
+  "env": { "OPENAI_API_KEY": "your-api-key" }
+}'
 ```
 
-详见 [GHCR 部署文档](https://timerwhou.github.io/team-dev-assistant/deploy/ghcr)。
-
-## 快速开始
-
+### 2. 作为 A2A Agent（多 Agent 协作 + HITL）
+支持 WebSocket BiDi Streaming，通过 Elicitation 实现实时人工介入。人类的确认结果会自动沉淀为 Playbook Fact。
 ```bash
-pnpm install
-cp .env.example .env  # 填入 OPENAI_API_KEY
-
-# 单 Agent CLI
-pnpm dev "/review apps/cli/src/index.ts"
-
-# 多 Agent 协作（A2A）
 pnpm start:all "apps/cli/src/index.ts" "项目里有没有 SQL 注入"
-
-# 体验 HITL（输入 y 确认）
-pnpm --filter @tda/coordinator dev "[elicit] package.json"
-
-# 评估集（Eval Gate）
-pnpm eval
 ```
 
-## 能力
+### 3. 作为 CLI 工具（外部大模型背景包）
+在去网页版大模型试错前，一键提取项目背景：
+```bash
+pnpm dev "/inject 设计一个支付回调"
+# 复制输出的高密度 Prompt，粘贴给 ChatGPT / Claude Web
+```
 
-- ✅ Prompt Engineering（SystemPrompt + Few-shot + CoT + 结构化输出）
-- ✅ Function Calling / 多轮 Tool Use
-- ✅ Agent 收敛（语义进展信号 + 完成条件清单 + 硬兜底）
-- ✅ Skill 系统（声明式 + 工具白名单）
-- ✅ MCP Server（Tools + Prompts + Resources）
-- ✅ A2A v1.1（WebSocket BiDi + MRTR + Elicitation）
-- ✅ Context Engineering（Tool Context 压缩 + Token 预算）
-- ✅ Eval Regression Gate（Trace 断言 + CI 门禁）
-- ✅ 安全（防命令注入、防路径穿越）
-- ✅ 可观测性（LLM/Agent/Trace 记录 + 成本统计）
+## 🏗️ 核心特性
 
-## License
+- **Team Playbook**：业务事实与技术规约的沉淀闭环。
+- **Context Engineering**：工具结果压缩，长任务最高节省 98.4% 的 token 消耗。
+- **Eval Regression Gate**：基于 Trace 轨迹断言，在 CI 中拦截 Prompt 改动导致的能力退化。
+- **安全与容错**：防命令注入、防路径穿越，入参受 Zod 严格校验。
 
-MIT
+## ⚠️ 边界声明 (Out of Scope)
+
+- **v1.0 不提供向量数据库**：Playbook 检索基于 `KeywordRetriever`（字面与关键词匹配）。语义混合检索已在 Roadmap 中。
+- **不替代 Confluence / Notion**：Playbook 存储在 Git 仓库，与代码同生共死，面向开发者而非产品经理。
+- **Skills Extension 的客户端原生支持仍在早期**：虽然 MCP Server 已声明 `io.modelcontextprotocol/skills` 扩展，但目前仅 `mcpc` 等少数 CLI 工具完整支持，主流 IDE 仍以 `project://playbook` Resource 为主要接入方式。
+
+## 🤝 版本兼容承诺
+
+- **Playbook YAML Schema**：在 1.x 版本内保持向后兼容。新增字段（如未来的 `supersedes`）不会破坏现有解析逻辑。
+- **MCP 协议**：当前支持 `stdio` 传输。`Streamable HTTP` 将在 v1.1 中引入，不会破坏现有本地接入方式。
+
+## 🗺️ Roadmap
+
+我们致力于将 Team Dev Assistant 从“单点本地辅助工具”演进为“跨端共享的团队级研发基座”。后续计划如下：
+
+### v1.1 — 智能引擎升级与外部接入
+- **检索层架构演进与决策图谱（Story #79）**：从字面匹配升级为语义混合检索（BM25 + Embedding），支持 1-hop 扩展召回，精准理解“为什么不用 Redis”等复杂决策链。
+- **支持外部 Agent 平台（Streamable HTTP）**：突破本地 stdio 限制，让网页版 Agent 平台（Dify、Coze）或局域网服务通过标准 HTTP 协议接入 Playbook。
+
+### v1.2 — 生产级加固与生态繁荣
+- **生产级安全边界加固**：完善运行时的最小权限控制，支持只读挂载、剥离 Linux Capabilities、网络策略隔离与最小化 Token Scope。
+- **Skill 独立版本管理**：在 SKILL.md 中引入 version 字段，支持在 skills/list 中感知技能的热更新。
+- **可观测性聚合指标**：提供面向运维的 API，输出请求延迟、错误率与 Fact 增长趋势。
+
+## 📚 文档
+
+完整指南：[Team Dev Assistant 文档站](https://timerwhou.github.io/team-dev-assistant/)
+
+## 📄 License
+[MIT](LICENSE)

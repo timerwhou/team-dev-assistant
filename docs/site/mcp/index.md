@@ -19,6 +19,7 @@
 | **Tool** | `list_issues` | 查询 GitHub Issue |
 | **Prompt** | `code_review` | 代码评审模板 |
 | **Resource** | `project://files` | 项目文件索引 |
+| **Resource** | `project://playbook` | 团队业务事实与技术规约（架构记忆体） |
 | **Skill** | `skill://review/SKILL.md` | 代码评审 Skill（见 [Skills](/skills/)） |
 | **Skill** | `skill://investigate/SKILL.md` | 问题排查 Skill |
 | **Skill** | `skill://issues/SKILL.md` | Issue 汇总 Skill |

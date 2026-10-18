@@ -37,4 +37,4 @@ LLM / Agent / Context 三类 Trace 事件，以 JSONL 格式输出到 `.traces/`
 bash scripts/trace-stats.sh
 ```
 
-输出 LLM 调用次数、总 Token、平均延迟、上下文压缩比等数据。
+输出 LLM 调用次数、总 Token、平均延迟、Context Engineering比等数据。

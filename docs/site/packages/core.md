@@ -44,6 +44,12 @@ const answer = await runAgent(
 - `recorder.emitAgentRun()`：总步数、工具调用数、收口原因。
 - `recorder.emitContextBuild()`：记录每次压缩的 before/after tokens。
 
+## 4. Team Playbook (playbook/)
+
+- `loadPlaybook()`：解析本地 `docs/playbook/` 目录中的 Markdown + YAML 资产。
+- `getContextPack()`：基于需求检索相关的 Fact 与 Stack，生成注入大模型的 Prompt 背景包。
+- `extractFactsFromCode()`：多语言 `@fact` 扫描器。
+
 ## 导出清单
 
 - `runAgent` / `AgentOptions`

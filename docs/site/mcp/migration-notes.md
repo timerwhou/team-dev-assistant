@@ -116,4 +116,4 @@ const handle = serveStdio(() => {
 
 - [ADR-0002: Upgrade to MCP v2](/adr/0002-upgrade-to-mcp-v2)
 - [ADR-0003: Implement Skills as Native Extension](/adr/0003-implement-skills-as-native-extension)
-- [设计文档: MCP v2 迁移](/design/mcp-v2-migration)
+- 设计文档: MCP v2 迁移（已归档）
