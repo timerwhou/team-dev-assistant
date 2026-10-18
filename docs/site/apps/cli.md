@@ -1,6 +1,6 @@
 # CLI
 
-命令行入口，本地调试用。
+命令行入口，主要用于本地调试与单 Agent 运行。
 
 ## 用法
 
@@ -17,20 +17,10 @@ pnpm dev "/issues --state=open --label=bug"
 pnpm dev "/help"
 ```
 
-## 参数解析
-
-支持三种形式：
-
-```bash
-pnpm dev "/review apps/cli/src/index.ts"     # 整串
-pnpm dev /review apps/cli/src/index.ts       # 拆分
-pnpm --filter @tda/cli dev -- /review x.ts   # 带分隔符
-```
-
 ## 环境变量
 
 | 变量 | 作用 |
 |---|---|
-| `TDA_TRACE=0` | 关闭 trace |
-| `TDA_TRACE_CONSOLE=1` | trace 打到控制台 |
-| `TDA_VERBOSE=0` | 关闭 verbose |
+| `TDA_TRACE=0` | 关闭 trace 日志 |
+| `TDA_TRACE_CONSOLE=1` | 将 trace 输出到控制台 |
+| `TDA_VERBOSE=0` | 关闭 verbose 模式 |

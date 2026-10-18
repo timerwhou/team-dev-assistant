@@ -1,47 +1,53 @@
 # @tda/a2a
 
-Agent-to-Agent 协议实现：Agent Card + JSON-RPC + Task 生命周期。
+Agent-to-Agent 协议实现。支持 v1.0（HTTP/轮询）与 v1.1（WebSocket BiDi + HITL）。
 
-## 核心概念
+## 核心能力
 
-| 概念 | 说明 |
-|---|---|
-| **Agent Card** | `/.well-known/agent.json`，声明 Agent 能力 |
-| **Task** | 一次完整任务，有 id / status / artifacts |
-| **Message** | Task 内的对话单元 |
-| **Part** | 消息内容块（text / data） |
+| 特性 | v1.0 | v1.1 |
+|---|---|---|
+| 传输层 | HTTP | HTTP + WebSocket |
+| 状态同步 | 客户端轮询 `tasks/get` | 双向流实时推送 |
+| 人工介入 | 无 | Elicitation / MRTR |
 
-## Server
+## Server 端
 
 ```ts
 import { createA2AServer } from "@tda/a2a";
 
 const card = {
   name: "Reviewer Agent",
-  description: "代码评审",
-  url: "http://localhost:4101",
-  version: "0.1.0",
-  capabilities: { streaming: false, pushNotifications: false },
-  defaultInputModes: ["text"],
-  defaultOutputModes: ["text"],
-  skills: [{ id: "code_review", name: "代码评审", description: "评审代码", tags: ["review"] }],
+  // ...
+  supportedInterfaces: [
+    { type: "http", url: "http://...", protocolVersions: ["1.0"] },
+    { type: "websocket", url: "ws://.../stream", protocolVersions: ["1.1"] }
+  ]
 };
 
-const app = createA2AServer(card, async (messages) => {
+const { listen } = createA2AServer(card, async (messages) => {
   // 处理消息，返回 artifacts
-  return [{ name: "report", parts: [{ type: "text", text: "..." }] }];
 });
-
-app.listen(4101);
+listen(4101);
 ```
 
-## Client
+## HITL 生命周期（MRTR）
+
+当 Agent 在 handler 中抛出 `ElicitationRequired` 时，任务会自动暂停：
+
+1. 服务端向客户端发送 `input-required` 状态，并附带 `requestState`。
+2. 客户端通过 CLI 询问人工。
+3. 拿到输入后，调用 `tasks/resume`，携带 `requestState` 恢复执行。
+
+## Client 端
 
 ```ts
 import { A2AClient } from "@tda/a2a";
 
 const client = new A2AClient("http://localhost:4101");
-await client.getAgentCard();             // 发现能力
-const task = await client.sendTask("评审 src/index.ts");   // 派活
-const final = await client.waitForCompletion(task.id);     // 等完成
+
+// 发送任务
+const task = await client.sendTask("评审 src/index.ts");
+
+// 恢复暂停的任务
+await client.resumeTask(task.requestState!, { confirm: true });
 ```

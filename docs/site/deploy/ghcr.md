@@ -6,14 +6,14 @@
 
 ```
 ghcr.io/timerwhou/team-dev-assistant:latest
-ghcr.io/timerwhou/team-dev-assistant:v0.1.6
-ghcr.io/timerwhou/team-dev-assistant:0.1
+ghcr.io/timerwhou/team-dev-assistant:vx.y.z
+ghcr.io/timerwhou/team-dev-assistant:x.y
 ```
 
 **Tag 策略**：
 - `latest`：最新 Release
-- `v0.1.6`：具体版本
-- `0.1`：minor 版本
+- `vx.y.z`：具体版本（如 v1.0.0）
+- `x.y`：minor 版本（如 1.0）
 
 ## 拉取镜像
 

@@ -34,6 +34,7 @@ export default defineConfig({
       { text: "包", link: "/packages/core" },
       { text: "应用", link: "/apps/cli" },
       { text: "开发", link: "/dev/eval" },
+      { text: "Skills", link: "/skills/" },
       { text: "MCP", link: "/mcp/" },
       { text: "A2A", link: "/a2a/" },
       { text: "Context", link: "/context/" },

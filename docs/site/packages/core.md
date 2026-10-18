@@ -1,6 +1,6 @@
 # @tda/core
 
-纯逻辑层：LLM 调用、Agent 循环、Schema、Trace。
+纯逻辑层：LLM 调用、Agent 循环、Context Engineering、Schema 校验与 Trace。
 
 ## 安装
 
@@ -8,11 +8,11 @@
 pnpm add @tda/core
 ```
 
-## 主要导出
+## 核心模块
 
-### `runAgent(system, user, opts)`
+### 1. Agent Loop（`runAgent`）
 
-Agent 主循环，支持 Function Calling / 多轮 Tool Use / 收敛机制。
+Agent 主循环，支持 Function Calling / 多轮 Tool Use / 多层收敛机制。
 
 ```ts
 import { runAgent } from "@tda/core";
@@ -24,34 +24,29 @@ const answer = await runAgent(
     maxSteps: 8,
     tools: openAITools,
     executeTools: executeToolCalls,
-    verbose: true,
+    compressorOptions: { readFileMaxLines: 500 } // Context 压缩阈值
   }
 );
 ```
 
-### 收敛机制
+### 2. Context Engineering（`context/`）
 
-| 层级 | 机制 | 触发条件 |
-|---|---|---|
-| 软 | Prompt 完成条件清单 | 模型自判 |
-| 中 | 语义进展信号（seenFiles） | 连续 2 轮无新文件 |
-| 硬 | 连续失败 / 工具总量 / 最大步数 | 兜底 |
+显式化上下文组装层。在工具结果进入 LLM 之前，自动截断超长内容，节省 Token 成本。
 
-### `tracedChatCompletion(params)`
+- **Tool Context 压缩**：当 `read_file` 返回超过阈值时，保留首尾，省略中间。
+- **Token 预算**：基于 `estimateTokens` 的轻量计算，避免撑爆模型上下文窗口。
 
-带 trace 的 LLM 调用，自动记录 model / tokens / 耗时 / 成本。
+### 3. Trace 可观测性（`trace/`）
 
-### `recorder`
+记录 LLM 调用、Agent 运行、工具调用与 Context Engineering 的完整生命周期。
 
-全局 Trace 记录器。
+- `recorder.emitLLMCall()`：耗时、Token、成本（自动估算）。
+- `recorder.emitAgentRun()`：总步数、工具调用数、收口原因。
+- `recorder.emitContextBuild()`：记录每次压缩的 before/after tokens。
 
-```ts
-import { recorder, createJsonlReporter } from "@tda/core";
+## 导出清单
 
-recorder.register(createJsonlReporter());
-```
-
-## 相关文档
-
-- [@tda/tools](/packages/tools) — 工具集
-- [可观测性](/dev/trace) — Trace 体系
+- `runAgent` / `AgentOptions`
+- `ContextBuilder` / `IdentityContextBuilder`
+- `compressToolResult` / `estimateTokens`
+- `recorder` / `createJsonlReporter`
