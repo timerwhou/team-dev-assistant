@@ -8,6 +8,19 @@
 [![Eval](https://github.com/timerwhou/team-dev-assistant/actions/workflows/eval.yml/badge.svg)](https://github.com/timerwhou/team-dev-assistant/actions/workflows/eval.yml)
 [![CodeQL](https://github.com/timerwhou/team-dev-assistant/actions/workflows/codeql.yml/badge.svg)](https://github.com/timerwhou/team-dev-assistant/actions/workflows/codeql.yml)
 
+## Context Engineering
+
+在 `@tda/core` 显式化上下文组装层，实现工具结果压缩与 Token 预算控制。
+
+### 收益（v0.4.0 实测）
+
+| 用例 | 无压缩 | 有压缩 | 节省 |
+|---|---|---|---|
+| investigate-convergence | 240,160 tokens | 3,830 tokens | **-98.4%** |
+| investigate-no-sql | 55,594 tokens | 4,969 tokens | **-91.1%** |
+
+详见 [Context Engineering 文档](https://timerwhou.github.io/team-dev-assistant/context/)。
+
 ## 架构
 
 ```
