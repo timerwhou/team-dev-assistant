@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "eval": "tsx run.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "benchmark": "tsx benchmark/run.ts"
   },
   "dependencies": {
     "@tda/core": "workspace:*",

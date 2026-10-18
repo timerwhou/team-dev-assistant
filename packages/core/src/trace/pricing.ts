@@ -13,6 +13,7 @@ const PRICING: Record<string, { input: number; output: number }> = {
   "claude-3-5-sonnet": { input: 3.0, output: 15.0 },
   "claude-3-5-haiku": { input: 0.8, output: 4.0 },
   "hy4-preview": { input: 0.8967, output: 2.6902 },
+  "hy3": { input: 0.1496, output: 0.5982 },
 };
 
 export function estimateCostUSD(

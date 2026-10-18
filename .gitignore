@@ -13,3 +13,6 @@ docs/site/.vitepress/cache
 # 自动生成的 Skill 文档
 docs/site/skills/*.md
 docs/site/skills/_sidebar.json
+
+# Benchmark 结果（可重现，不进 git）
+eval/benchmark/results/*.json
