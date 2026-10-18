@@ -1,7 +1,7 @@
 # 6. Decouple Release Versioning from Milestone Naming
 
 Date: 2026-10-17
-Status: Proposed
+Status: Accepted
 
 ## Context and Problem Statement
 
