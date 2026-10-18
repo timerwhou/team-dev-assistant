@@ -1,5 +1,12 @@
 # Team Dev Assistant
 
+## 🧠 Team Playbook (Architecture Memory)
+**1.0.0 核心跃升：从“单次执行工具”变为“具备自演进架构记忆的研发基座”。**
+- **捕获**：开发者通过 `// @fact` 注释或 HITL 确认自动沉淀业务事实。
+- **约束**：包含决策(Decision)与否决方案(Alternatives)的结构化资产，强制约束 AI 幻觉。
+- **注入**：通过 `/inject` 导出外部模型背景包，或通过 MCP 协议供内部 IDE 自动读取。
+
+
 > 面向研发团队的 AI Agent 工具集：支持 CLI / MCP / A2A 三种接入，具备多 Agent 协作、Context Engineering、Eval Regression Gate 与 HITL 能力，开箱即用。
 
 [![CI](https://github.com/timerwhou/team-dev-assistant/actions/workflows/ci.yml/badge.svg)](https://github.com/timerwhou/team-dev-assistant/actions/workflows/ci.yml)

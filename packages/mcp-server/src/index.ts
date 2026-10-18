@@ -3,7 +3,7 @@ import path from "node:path";
 import { McpServer } from "@modelcontextprotocol/server";
 import { serveStdio } from "@modelcontextprotocol/server/stdio";
 import { discoverSkills, registerSkillResources } from "@olaservo/ext-skills/server";
-import { getMonorepoRoot } from "@tda/core";
+import { getMonorepoRoot, loadPlaybook } from "@tda/core";
 import { registerReadFile } from "./tools/read-file";
 import { registerSearchCode } from "./tools/search-code";
 import { registerListIssues } from "./tools/list-issues";
@@ -34,6 +34,29 @@ const handle = serveStdio(() => {
     ttlMs: 60_000,
     cacheScope: "public",
   });
+  // 注册 Playbook Resource
+  server.registerResource(
+    "team-playbook",
+    "project://playbook",
+    {
+      title: "Team Playbook",
+      description: "团队业务事实与技术规约，包含 Fact 和 Stack",
+      mimeType: "text/markdown",
+    },
+    async (uri) => {
+      const entries = loadPlaybook();
+      if (entries.length === 0) {
+        return {
+          contents: [{ uri: uri.href, mimeType: "text/markdown", text: "当前项目暂无 Playbook 规约。" }],
+        };
+      }
+      const text = entries.map(e => `### [${e.type.toUpperCase()}] ${e.title}\n${e.content}`).join("\n\n---\n\n");
+      return {
+        contents: [{ uri: uri.href, mimeType: "text/markdown", text }],
+      };
+    }
+  );
+
 
   return server;
 });
