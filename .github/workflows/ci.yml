@@ -160,7 +160,6 @@ jobs:
       - name: Run MCP Probe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TDA_ROOT: ${{ github.workspace }}
         run: npx -y @k08200/mcp-probe@latest node packages/mcp-server/dist/index.js --probe-tools --github-summary
 
   # ---------- 聚合门禁 ----------
