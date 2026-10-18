@@ -1,6 +1,8 @@
 import "@tda/core/lib/env";
 import { A2AClient } from "@tda/a2a";
 import type { Task } from "@tda/a2a";
+import * as readline from "node:readline/promises";
+import { stdin, stdout } from "node:process";
 
 const REVIEWER_URL = process.env.REVIEWER_URL || "http://localhost:4101";
 const INVESTIGATOR_URL = process.env.INVESTIGATOR_URL || "http://localhost:4102";
@@ -17,6 +19,44 @@ async function waitForAgent(client: A2AClient, name: string): Promise<void> {
     }
   }
   throw new Error(`${name} 未在 ${timeout}ms 内就绪`);
+}
+
+/**
+ * 等待任务完成，如果遇到 input-required，弹出 CLI 提示人类输入。
+ */
+async function waitForCompletionWithHITL(
+  client: A2AClient,
+  taskId: string,
+  kind: string,
+  timeoutMs = 120000
+): Promise<Task> {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    const task = await client.getTask(taskId);
+
+    if (task.status === "completed" || task.status === "failed") {
+      return task;
+    }
+
+    if (task.status === "input-required") {
+      // 人类介入
+      console.log(`\n🤖 [${kind}] Agent 需要澄清：`);
+      console.log(`   ${task.pendingElicit?.question}`);
+
+      const rl = readline.createInterface({ input: stdin, output: stdout });
+      const answer = await rl.question("   请输入 (y/n): ");
+      rl.close();
+
+      console.log(`   ✅ 已提交人类输入，Agent 继续执行...`);
+
+      await client.resumeTask(task.requestState!, {
+        confirm: answer.toLowerCase() === "y",
+      });
+    }
+
+    await new Promise((r) => setTimeout(r, 1000));
+  }
+  throw new Error("等待任务超时");
 }
 
 async function main() {
@@ -48,7 +88,7 @@ async function main() {
   }
 
   for (const job of jobs) {
-    const final = await job.client.waitForCompletion(job.task.id);
+    const final = await waitForCompletionWithHITL(job.client, job.task.id, job.kind);
     console.log(`\n=== ${job.kind} (${final.status}) ===\n`);
 
     for (const msg of final.messages) {
