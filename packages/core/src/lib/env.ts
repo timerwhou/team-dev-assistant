@@ -11,5 +11,9 @@ dotenv.config({ path: path.resolve(rootDir, ".env") });
 dotenv.config({ path: path.resolve(rootDir, ".env.local") });
 
 export function getMonorepoRoot(): string {
+  // 优先使用环境变量指定的根目录（用于 CI 或非标准环境）
+  if (process.env.TDA_ROOT) {
+    return process.env.TDA_ROOT;
+  }
   return rootDir;
 }
