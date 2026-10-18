@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "tsx src/index.ts",
     "typecheck": "tsc --noEmit",
-    "build": "tsup src/index.ts --format esm --clean"
+    "build": "tsup"
   },
   "dependencies": {
     "@modelcontextprotocol/server": "^2.3.1",
