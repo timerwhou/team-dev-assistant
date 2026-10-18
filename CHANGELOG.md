@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/timerwhou/team-dev-assistant/compare/v1.0.0...v1.0.1) (2026-10-18)
+
+
+### Bug Fixes
+
+* **docs:** 修复 CI 环境下无 eval 报告时的构建死链问题，增加 Fallback 占位页 ([d15d33d](https://github.com/timerwhou/team-dev-assistant/commit/d15d33de206bbdbe29489c7a48934de3a4057343))
+
 ## [1.0.0](https://github.com/timerwhou/team-dev-assistant/compare/v0.6.1...v1.0.0) (2026-10-18)
 
 
