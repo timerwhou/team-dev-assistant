@@ -1,17 +1,24 @@
 import "@tda/core/lib/env";
 import { createA2AServer } from "@tda/a2a";
+import type { Artifact, Message, AgentCard } from "@tda/a2a";
 import { runAgent } from "@tda/core";
 import { executeToolCalls, openAITools } from "@tda/tools";
-import type { Artifact, Message } from "@tda/a2a";
 
 const PORT = Number(process.env.PORT || 4101);
+const URL = `http://localhost:${PORT}`;
+const WS_URL = `ws://localhost:${PORT}/stream`;
 
-const card = {
+const card: AgentCard = {
   name: "Reviewer Agent",
   description: "代码评审 Agent",
-  url: `http://localhost:${PORT}`,
+  url: URL,
   version: "0.1.0",
-  capabilities: { streaming: false, pushNotifications: false },
+  protocolVersion: "1.1",
+  supportedInterfaces: [
+    { type: "http", url: URL, protocolVersions: ["1.0"] },
+    { type: "websocket", url: WS_URL, protocolVersions: ["1.1"] },
+  ],
+  capabilities: { streaming: true, pushNotifications: false },
   defaultInputModes: ["text"],
   defaultOutputModes: ["text"],
   skills: [{ id: "code_review", name: "代码评审", description: "评审代码", tags: ["review"] }],
@@ -37,5 +44,5 @@ async function handler(messages: Message[]): Promise<Artifact[]> {
   return [{ name: "review-report", parts: [{ type: "text", text: answer }] }];
 }
 
-const app = createA2AServer(card, handler);
-app.listen(PORT, () => console.error(`[reviewer] on http://localhost:${PORT}`));
+const { listen } = createA2AServer(card, handler);
+listen(PORT, () => console.error(`[reviewer] on ${URL} (ws: ${WS_URL})`));

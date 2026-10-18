@@ -6,11 +6,23 @@ export type AgentSkill = {
   examples?: string[];
 };
 
+/** A2A 传输接口声明 */
+export type SupportedInterface = {
+  /** 接口类型 */
+  type: "http" | "websocket" | "sse";
+  /** 端点 URL */
+  url: string;
+  /** 支持的协议版本 */
+  protocolVersions: string[];
+};
+
 export type AgentCard = {
   name: string;
   description: string;
   url: string;
   version: string;
+  protocolVersion: string;
+  supportedInterfaces: SupportedInterface[];
   capabilities: { streaming: boolean; pushNotifications: boolean };
   defaultInputModes: string[];
   defaultOutputModes: string[];
@@ -27,7 +39,13 @@ export type Message = {
   messageId: string;
 };
 
-export type TaskStatus = "submitted" | "working" | "completed" | "failed" | "canceled";
+export type TaskStatus =
+  | "submitted"
+  | "working"
+  | "input-required"
+  | "completed"
+  | "failed"
+  | "canceled";
 
 export type Artifact = { name: string; parts: Part[] };
 
@@ -38,4 +56,19 @@ export type Task = {
   artifacts: Artifact[];
   createdAt: string;
   updatedAt: string;
+};
+
+/** WebSocket 帧（JSON-RPC 2.0） */
+export type WsRequest = {
+  jsonrpc: "2.0";
+  id: string;
+  method: string;
+  params?: unknown;
+};
+
+export type WsResponse = {
+  jsonrpc: "2.0";
+  id: string;
+  result?: unknown;
+  error?: { code: number; message: string };
 };
