@@ -4,6 +4,7 @@ import { recorder, createJsonlReporter, createConsoleReporter } from "@tda/core"
 import { executeToolCalls, openAITools, toolsByName } from "@tda/tools";
 import { skillsByName, listSkills } from "@tda/skills";
 import fs from "node:fs";
+import crypto from "node:crypto";
 import path from "node:path";
 
 recorder.register(createJsonlReporter());
@@ -72,12 +73,14 @@ async function main() {
 
     let count = 0;
     for (const fact of facts) {
-      const fileName = `fact-${Date.now()}-${count}.md`;
+      // 幂等性核心：基于来源路径和内容生成固定 hash，确保同样代码生成同名文件
+      const hash = crypto.createHash("md5").update(fact.sourceFile + fact.content).digest("hex").slice(0, 8);
+      const fileName = `fact-${hash}.md`;
+      const filePath = path.join(dir, fileName);
       const today = new Date().toISOString().split("T")[0];
-      
-      // 专业标准：生成的 Markdown 模板必须包含决策与理由字段，与 1.0 Schema 完全对齐
+
       const content = `---
-id: fact-${Date.now()}-${count}
+id: fact-${hash}
 type: fact
 domain: ${fact.domain}
 status: active
@@ -89,11 +92,14 @@ decided_at: ${today}
 supersedes: []
 ---
 ${fact.content}`;
-      
-      fs.writeFileSync(path.join(dir, fileName), content);
+
+      // 只有内容不存在或发生变化时才写入，防止 CI 中产生无意义的 diff
+      if (!fs.existsSync(filePath) || fs.readFileSync(filePath, "utf-8") !== content) {
+        fs.writeFileSync(filePath, content);
+      }
       count++;
     }
-    console.log(`✅ 成功提取并保存 ${count} 条 Fact 到 docs/playbook/。`);
+    console.log(`✅ 成功提取并扫描 ${count} 条 Fact。`);
     return;
   }
 
