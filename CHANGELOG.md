@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.1](https://github.com/timerwhou/team-dev-assistant/compare/v0.6.0...v0.6.1) (2026-10-18)
+
+
+### Bug Fixes
+
+* **ci:** 修复 Deploy Docs 死链与生成文件缺失 ([#70](https://github.com/timerwhou/team-dev-assistant/issues/70)) ([a8d6ea2](https://github.com/timerwhou/team-dev-assistant/commit/a8d6ea29281f1f1b1c1228f9a624c4c3464a89de))
+
 ## [0.6.0](https://github.com/timerwhou/team-dev-assistant/compare/v0.5.0...v0.6.0) (2026-10-18)
 
 
