@@ -8,6 +8,18 @@
 [![Eval](https://github.com/timerwhou/team-dev-assistant/actions/workflows/eval.yml/badge.svg)](https://github.com/timerwhou/team-dev-assistant/actions/workflows/eval.yml)
 [![CodeQL](https://github.com/timerwhou/team-dev-assistant/actions/workflows/codeql.yml/badge.svg)](https://github.com/timerwhou/team-dev-assistant/actions/workflows/codeql.yml)
 
+## A2A 双向流与 HITL
+
+项目基于 A2A 协议 v1.1，支持 WebSocket 双向流与人类在环（Human-in-the-Loop）。
+
+### 核心能力
+
+- **实时澄清**：Agent 在执行中遇到歧义，通过 Elicitation 暂停任务并向 CLI 提问
+- **无缝恢复**：人类输入后，任务通过 MRTR 语义恢复，从断点继续执行
+- **协议兼容**：Agent Card 同时声明 HTTP 和 WebSocket 接口，兼容 v1.0 客户端
+
+详见 [A2A 文档](https://timerwhou.github.io/team-dev-assistant/a2a/)。
+
 ## Eval Gate（质量门禁）
 
 基于 Trace 的回归门禁，确保 Prompt 改动不会导致 Agent 能力退化。
