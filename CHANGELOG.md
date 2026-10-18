@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/timerwhou/team-dev-assistant/compare/v0.4.0...v0.5.0) (2026-10-18)
+
+
+### Features
+
+* **eval:** eval 消费 Trace 数据，支持轨迹断言 ([#54](https://github.com/timerwhou/team-dev-assistant/issues/54)) ([272871c](https://github.com/timerwhou/team-dev-assistant/commit/272871c609c6da5a79697cc706b515ac4db4cf55))
+
 ## [0.4.0](https://github.com/timerwhou/team-dev-assistant/compare/v0.3.0...v0.4.0) (2026-10-16)
 
 
