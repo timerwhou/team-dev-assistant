@@ -15,6 +15,17 @@ export type EvalCase = {
   maxSteps?: number;
   /** 用例说明 */
   description?: string;
+  /** 轨迹断言（从 Trace 数据里检查） */
+  expect?: {
+    /** 期望的收口原因（AgentRunTrace.stopReason） */
+    stopReason?: string[];
+    /** 必须调用的工具 */
+    mustUseTools?: string[];
+    /** 最大工具调用次数 */
+    maxToolCalls?: number;
+    /** 是否必须有上下文压缩（context_build 事件） */
+    mustHaveContextBuild?: boolean;
+  };
 };
 
 export type EvalResult = {
@@ -29,6 +40,12 @@ export type EvalResult = {
   toolCalls?: number;
   /** 若 Agent 有步骤记录，记录步数 */
   steps?: number;
+  /** 收口原因 */
+  stopReason?: string;
+  /** 工具调用列表 */
+  usedTools?: string[];
+  /** 上下文组装次数 */
+  contextBuilds?: number;
 };
 
 export type EvalReport = {

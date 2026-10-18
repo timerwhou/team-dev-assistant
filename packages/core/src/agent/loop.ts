@@ -123,6 +123,14 @@ export async function runAgent(
             `  ${r.ok ? "✅" : "❌"} ${r.name} (${r.durationMs}ms)${r.ok ? "" : " " + r.error}`
           );
         }
+        // 行业标准：工具执行结束即发射 trace
+        recorder.emitToolCall({
+          name: r.name,
+          durationMs: r.durationMs,
+          ok: r.ok,
+          error: r.error,
+        });
+
         // 压缩工具结果（Story #37）
         let toolContent: string;
         if (r.ok) {
