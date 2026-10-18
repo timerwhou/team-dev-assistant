@@ -6,13 +6,9 @@ export type AgentSkill = {
   examples?: string[];
 };
 
-/** A2A 传输接口声明 */
 export type SupportedInterface = {
-  /** 接口类型 */
   type: "http" | "websocket" | "sse";
-  /** 端点 URL */
   url: string;
-  /** 支持的协议版本 */
   protocolVersions: string[];
 };
 
@@ -49,6 +45,30 @@ export type TaskStatus =
 
 export type Artifact = { name: string; parts: Part[] };
 
+// ===== HITL 相关类型 =====
+
+export type RequestState = {
+  taskId: string;
+  elicitId: string;
+  inputSchema: Record<string, unknown>;
+  expiresAt: string;
+};
+
+export type ElicitRequest = {
+  taskId: string;
+  elicitId: string;
+  question: string;
+  inputSchema: Record<string, unknown>;
+  expiresAt: string;
+};
+
+export class ElicitationRequired extends Error {
+  constructor(public elicit: ElicitRequest) {
+    super(`Elicitation required: ${elicit.question}`);
+    this.name = "ElicitationRequired";
+  }
+}
+
 export type Task = {
   id: string;
   status: TaskStatus;
@@ -56,6 +76,10 @@ export type Task = {
   artifacts: Artifact[];
   createdAt: string;
   updatedAt: string;
+  /** Elicitation 期间的状态 */
+  requestState?: RequestState;
+  /** 当前等待的 Elicitation 请求 */
+  pendingElicit?: ElicitRequest;
 };
 
 /** WebSocket 帧（JSON-RPC 2.0） */
