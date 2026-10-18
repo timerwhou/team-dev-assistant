@@ -35,6 +35,7 @@ export default defineConfig({
       { text: "应用", link: "/apps/cli" },
       { text: "开发", link: "/dev/eval" },
       { text: "MCP", link: "/mcp/" },
+      { text: "A2A", link: "/a2a/" },
       { text: "Context", link: "/context/" },
       { text: "Eval", link: "/eval/" },
       { text: "部署", link: "/deploy/ghcr" },
@@ -86,7 +87,15 @@ export default defineConfig({
             { text: "Coordinator", link: "/apps/coordinator" },
           ],
         },
-      ],      "/mcp/": [
+      ],      "/a2a/": [
+        {
+          text: "A2A 协议",
+          items: [
+            { text: "双向流与 HITL", link: "/a2a/" },
+          ],
+        },
+      ],
+      "/mcp/": [
         {
           text: "MCP 集成",
           items: [
@@ -141,6 +150,7 @@ export default defineConfig({
             { text: "4. Align Release Versioning", link: "/adr/0004-align-release-versioning-with-milestones" },
             { text: "6. Decouple Versioning from Milestones", link: "/adr/0006-decouple-versioning-from-milestones" },
             { text: "7. Eval Regression Gate", link: "/adr/0007-eval-regression-gate" },
+            { text: "8. A2A BiDi & HITL", link: "/adr/0008-a2a-bidi-hitl" },
           ],
         },
       ],
