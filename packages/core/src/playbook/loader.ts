@@ -1,16 +1,13 @@
 import fs from "node:fs";
 import path from "node:path";
 import { getMonorepoRoot } from "../lib/env";
-import type { PlaybookEntry } from "./types";
+import type { PlaybookEntry, Retriever } from "./types";
+import { BM25Retriever, AsyncHybridRetriever } from "./retriever";
 
 const PLAYBOOK_DIR = path.join(getMonorepoRoot(), "docs/playbook");
 
-// 抽象检索接口，为 1.1 的语义检索留口子
-export interface Retriever {
-  retrieve(requirement: string, entries: PlaybookEntry[]): PlaybookEntry[];
-}
-
 export function loadPlaybook(): PlaybookEntry[] {
+  // ... (保持原有的解析逻辑不变) ...
   if (!fs.existsSync(PLAYBOOK_DIR)) return [];
   const entries: PlaybookEntry[] = [];
   const files = fs.readdirSync(PLAYBOOK_DIR).filter(f => f.endsWith(".md") && f !== "README.md");
@@ -28,7 +25,6 @@ export function loadPlaybook(): PlaybookEntry[] {
       return m ? m[1].trim() : "";
     };
 
-    // 简单解析数组（实际项目中可引入 gray-matter 或 js-yaml）
     const getArray = (key: string) => {
       const m = yaml.match(new RegExp(`^${key}:\\s*\\n((?:\\s*-\\s*.+\\n?)*)`, "m"));
       if (!m) return [];
@@ -53,43 +49,13 @@ export function loadPlaybook(): PlaybookEntry[] {
   return entries;
 }
 
-// 1.0 默认实现：基于字面+决策字段的加权匹配
-export class KeywordRetriever implements Retriever {
-  retrieve(requirement: string, entries: PlaybookEntry[]): PlaybookEntry[] {
-    const req = requirement.toLowerCase();
-    // 提取英文单词和中文 2-gram
-    const tokens = new Set<string>();
-    const latin = req.match(/[a-zA-Z0-9_]+/g) ?? [];
-    for (const w of latin) if (w.length > 1) tokens.add(w);
-    const cjkRuns = req.match(/[\u4e00-\u9fff]+/g) ?? [];
-    for (const run of cjkRuns) {
-      for (let i = 0; i + 1 < run.length; i++) tokens.add(run.slice(i, i + 2));
-    }
-
-    return entries.filter((e) => {
-      if (e.status !== "active") return false;
-      
-      // 检索范围：标题、正文、领域、决策记录、理由（命中理由也算强关联）
-      const searchSpace = [
-        e.title, e.content, e.domain, e.decision || "", e.rationale || "",
-        ...(e.alternatives || [])
-      ].join(" ").toLowerCase();
-
-      return [...tokens].some((t) => searchSpace.includes(t));
-    });
-  }
-}
-
-// 统一生成 Context Pack 的入口
-export function getContextPack(requirement: string, retriever: Retriever = new KeywordRetriever()): string {
-  const entries = loadPlaybook();
-  const relevant = retriever.retrieve(requirement, entries);
-
+// 提取公共的 Prompt 格式化逻辑
+function formatContextPrompt(requirement: string, relevant: PlaybookEntry[]): string {
   if (relevant.length === 0) return "";
 
   let prompt = `# 项目架构基座与业务事实（上下文注入）\n\n针对需求：${requirement}\n\n`;
-  const facts = relevant.filter((r) => r.type === "fact");
-  const stacks = relevant.filter((r) => r.type === "stack");
+  const facts = relevant.filter((r: PlaybookEntry) => r.type === "fact");
+  const stacks = relevant.filter((r: PlaybookEntry) => r.type === "stack");
 
   const formatEntry = (e: PlaybookEntry) => {
     let text = `### ${e.title}\n`;
@@ -113,4 +79,20 @@ export function getContextPack(requirement: string, retriever: Retriever = new K
   
   prompt += `> 请在基于上述技术选型、业务事实与决策理由的前提下，完成代码设计与实现，禁止偏离。\n`;
   return prompt;
+}
+
+// 1.0 同步入口（兼容现有 MCP / 纯本地场景）
+export function getContextPack(requirement: string, retriever?: Retriever): string {
+  const entries = loadPlaybook();
+  const activeRetriever = retriever || new BM25Retriever();
+  const relevant = activeRetriever.retrieve(requirement, entries);
+  return formatContextPrompt(requirement, relevant);
+}
+
+// 1.1 异步入口（支持语义检索，供 CLI /inject 等场景使用）
+export async function getContextPackAsync(requirement: string): Promise<string> {
+  const entries = loadPlaybook();
+  const hybridRetriever = new AsyncHybridRetriever();
+  const relevant = await hybridRetriever.retrieveAsync(requirement, entries);
+  return formatContextPrompt(requirement, relevant);
 }
