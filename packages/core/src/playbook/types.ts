@@ -8,7 +8,6 @@ export interface PlaybookEntry {
   status: PlaybookStatus;
   title: string;
   content: string; 
-  // 行业前沿：用于记录决策与理由，极大提升 LLM 合规率
   decision?: string;
   alternatives?: string[];
   rationale?: string;
@@ -22,4 +21,14 @@ export interface ContextPack {
   requirement: string;
   facts: PlaybookEntry[];
   stacks: PlaybookEntry[];
+}
+
+// 同步检索接口（用于无 API Key 时的本地快速检索）
+export interface Retriever {
+  retrieve(requirement: string, entries: PlaybookEntry[]): PlaybookEntry[];
+}
+
+// 异步检索接口（用于调用 Embedding API 的语义检索）
+export interface AsyncRetriever {
+  retrieveAsync(requirement: string, entries: PlaybookEntry[]): Promise<PlaybookEntry[]>;
 }

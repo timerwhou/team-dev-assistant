@@ -1,5 +1,5 @@
 import "@tda/core/lib/env";
-import { runAgent, getContextPack, extractFactsFromCode, getMonorepoRoot } from "@tda/core";
+import { runAgent, getContextPackAsync, extractFactsFromCode, getMonorepoRoot } from "@tda/core";
 import { recorder, createJsonlReporter, createConsoleReporter } from "@tda/core";
 import { executeToolCalls, openAITools, toolsByName } from "@tda/tools";
 import { skillsByName, listSkills } from "@tda/skills";
@@ -48,7 +48,7 @@ async function main() {
   // === 拦截 /inject ===
   if (raw.startsWith("/inject ")) {
     const requirement = raw.slice(8).trim();
-    const pack = getContextPack(requirement);
+    const pack = await getContextPackAsync(requirement);
     if (!pack) {
       console.log("⚠️ 未找到相关上下文，请确保 docs/playbook 中已沉淀相关资产。");
     } else {
