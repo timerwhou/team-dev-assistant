@@ -3,49 +3,49 @@ layout: home
 
 hero:
   name: Team Dev Assistant
-  text: 具备自演进架构记忆的研发基座
-  tagline: 统一沉淀业务事实与技术规约，消除跨模型/跨工作流认知偏差。支持 CLI / MCP / A2A 接入，内置 Team Playbook 架构记忆体。
+  text: 让 AI 拥有团队的“长期记忆”
+  tagline: 面向 AI Agent 研发的团队级架构记忆体。消除重复造轮子与幻觉，支持语义混合检索与双轨制接入。
   actions:
     - theme: brand
       text: 快速开始
       link: /guide/getting-started
     - theme: alt
-      text: 了解 Team Playbook
-      link: /guide/playbook
+      text: 了解核心架构
+      link: /guide/architecture
     - theme: alt
       text: GitHub
       link: https://github.com/timerwhou/team-dev-assistant
 
 features:
+  - icon: 🛡️
+    title: 业务防幻觉 (Facts)
+    details: 将“严禁自行计算成本，必须复用 CostService”写入 Playbook，AI 生成代码时自动施加约束。
+
   - icon: 🧠
-    title: Team Playbook (架构记忆体)
-    details: 开发者通过 // @fact 或 HITL 确认自动沉淀业务事实与决策理由，通过 MCP 与 CLI 无缝注入给外部大模型。
+    title: 决策溯源 (Decisions)
+    details: 结构化记录 Decision 与 Alternatives。让 AI 在任何时候都明白“为什么当初否决了 Redis”。
+
+  - icon: 🔍
+    title: 语义混合检索 (v1.2.0)
+    details: BM25 与 Embedding 双路并发，配合 RRF 融合与决策图谱 1-hop 扩展，跨词精准召回。
+
+  - icon: 🌐
+    title: 双轨制 MCP 接入 (v1.2.0)
+    details: 采用无状态设计，同时支持本地 stdio (Cursor) 与远程 Streamable HTTP (Dify/Coze) 接入。
+
+  - icon: 🔒
+    title: 企业级安全边界 (v1.2.0)
+    details: HTTP 模式内置 Bearer Token 鉴权。提供 Docker 只读挂载与 Capabilities 剥离指南。
+
+  - icon: 🤝
+    title: HITL 闭环演进
+    details: 人类确认修改后，系统自动将决策理由沉淀为本地 Fact，让架构记忆自我生长。
 
   - icon: ⚡
     title: Context Engineering
-    details: 显式化上下文组装层，实现 Tool Context 压缩与 Token 预算控制，长任务最高节省 98.4% 的 Token 消耗。
+    details: 显式化上下文组装层，智能压缩工具结果（长任务最高省 98.4% Token）。
 
   - icon: 🧪
     title: Eval Regression Gate
-    details: 基于 Trace 轨迹断言，在 CI 中拦截 Prompt 改动导致的能力静默退化。
-
-  - icon: 🤝
-    title: A2A v1.1 & HITL
-    details: 支持 WebSocket BiDi Streaming，通过 Elicitation 与 MRTR 实现人工实时介入与自动决策沉淀。
-
-  - icon: 🔌
-    title: MCP Server
-    details: 暴露 Tools / Prompts / Resources / Skills，兼容 Claude Desktop 与 Cursor 等标准客户端。
-
-  - icon: 🛡️
-    title: 安全与容错
-    details: 防命令注入、防路径穿越，所有工具入参均受 Zod 严格校验。
-
-  - icon: 📊
-    title: 全链路可观测性
-    details: 记录 LLM / Agent / Trace 三类事件，完整掌握耗时、Token 成本与收口原因。
-
-  - icon: 🧩
-    title: Agent Skills 生态
-    details: 原生实现 SEP-2640 协议，内置代码评审、问题排查等多个开箱即用的 AI 技能，支持跨客户端分发与共享。
+    details: 基于 Trace 轨迹断言，在 CI 中自动拦截 Prompt 或工具链改动导致的能力退化。
 ---

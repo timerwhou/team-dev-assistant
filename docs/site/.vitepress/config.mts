@@ -16,6 +16,7 @@ export default defineConfig({
         text: "核心能力",
         items: [
           { text: "Team Playbook (架构记忆)", link: "/guide/playbook" },
+          { text: "语义检索原理 (1.2.0)", link: "/guide/playbook#进阶-语义检索与向量模型配置" },
           { text: "Context Engineering", link: "/context/" },
           { text: "Eval Regression Gate", link: "/eval/" },
           { text: "HITL & A2A", link: "/a2a/" },
@@ -26,7 +27,7 @@ export default defineConfig({
         text: "开发参考",
         items: [
           { text: "CLI 命令行", link: "/apps/cli" },
-          { text: "MCP Server", link: "/mcp/" },
+          { text: "MCP Server (双轨制)", link: "/packages/mcp-server" },
           { text: "核心包 (Core)", link: "/packages/core" },
           { text: "应用架构 (Apps)", link: "/apps/coordinator" }
         ]
@@ -34,7 +35,7 @@ export default defineConfig({
       {
         text: "生态与设计",
         items: [
-          { text: "GHCR 部署", link: "/deploy/ghcr" },
+          { text: "安全部署指南 (Docker)", link: "/deploy/ghcr" },
           { text: "架构决策 (ADR)", link: "/adr/0000-use-adrs" },
           { text: "设计文档", link: "/design/versioning-strategy" }
         ]
@@ -51,11 +52,16 @@ export default defineConfig({
     sidebar: {
       "/guide/": [
         {
-          text: "入门",
+          text: "快速入门",
           items: [
             { text: "快速开始", link: "/guide/getting-started" },
             { text: "架构设计", link: "/guide/architecture" },
             { text: "3分钟演示", link: "/guide/demo" },
+          ],
+        },
+        {
+          text: "核心特性：架构记忆体",
+          items: [
             { text: "Team Playbook 指南", link: "/guide/playbook" },
           ],
         },
@@ -83,7 +89,7 @@ export default defineConfig({
         { text: "协议", items: [{ text: "@tda/a2a", link: "/packages/a2a" }, { text: "@tda/mcp-server", link: "/packages/mcp-server" }] }
       ],
       "/deploy/": [
-        { text: "部署", items: [{ text: "GHCR 镜像", link: "/deploy/ghcr" }] }
+        { text: "部署与安全", items: [{ text: "GHCR 镜像与安全运行", link: "/deploy/ghcr" }] }
       ],
       "/adr/": [
         {
