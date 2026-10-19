@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.2](https://github.com/timerwhou/team-dev-assistant/compare/v1.0.1...v1.0.2) (2026-10-19)
+
+
+### Bug Fixes
+
+* **security:** 注入数据清洗切断污点流，并配置 CodeQL 集中式误报豁免 ([1f88fed](https://github.com/timerwhou/team-dev-assistant/commit/1f88fedb4ea85694d0a86c5b47ac1989045be3f3))
+* **security:** 移除不安全的 HTML 正则，改用纯文本清洗并集中豁免误报 ([#89](https://github.com/timerwhou/team-dev-assistant/issues/89)) ([e1ab18b](https://github.com/timerwhou/team-dev-assistant/commit/e1ab18b91e722cdc75075da112998de83e443485))
+
 ## [1.0.1](https://github.com/timerwhou/team-dev-assistant/compare/v1.0.0...v1.0.1) (2026-10-18)
 
 
