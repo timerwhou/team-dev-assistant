@@ -1,61 +1,29 @@
 # GHCR 部署
 
-项目在每次 Release 时自动构建 Docker 镜像并推送到 GitHub Container Registry（GHCR）。
+项目在每次 Release 时自动构建 Docker 镜像并推送到 GitHub Container Registry。
 
 ## 镜像地址
+`ghcr.io/timerwhou/team-dev-assistant:latest`
 
-```
-ghcr.io/timerwhou/team-dev-assistant:latest
-ghcr.io/timerwhou/team-dev-assistant:vx.y.z
-ghcr.io/timerwhou/team-dev-assistant:x.y
-```
+## 生产级安全运行命令
 
-**Tag 策略**：
-- `latest`：最新 Release
-- `vx.y.z`：具体版本（如 v1.0.0）
-- `x.y`：minor 版本（如 1.0）
-
-## 拉取镜像
-
-**镜像已设为 public**，无需登录：
+不要直接使用 `docker run` 默认参数运行，请严格遵循以下安全配置：
 
 ```bash
-docker pull ghcr.io/timerwhou/team-dev-assistant:latest
+docker run -d --rm \
+  -p 3000:3000 \
+  -e MCP_TRANSPORT=http \
+  -e MCP_API_KEY=your-secure-token \
+  --read-only \
+  --cap-drop=ALL \
+  --security-opt=no-new-privileges \
+  -v $(pwd)/docs/playbook:/app/docs/playbook:ro \
+  ghcr.io/timerwhou/team-dev-assistant:v1.2.0
 ```
 
-**如果需要登录**（比如镜像改为 private）：
-
-```bash
-# 1. 创建 GitHub PAT（需要 read:packages scope）
-# 2. 登录 GHCR
-echo "YOUR_PAT" | docker login ghcr.io -u timerwhou --password-stdin
-
-# 3. 拉取
-docker pull ghcr.io/timerwhou/team-dev-assistant:latest
-```
-
-## 运行镜像
-
-```bash
-docker run --rm \
-  -e OPENAI_API_KEY=sk-xxx \
-  -e OPENAI_BASE_URL=https://api.openai.com/v1 \
-  -e MODEL=gpt-4o-mini \
-  -v /path/to/your/project:/workspace:ro \
-  ghcr.io/timerwhou/team-dev-assistant:latest \
-  pnpm --filter @tda/cli dev -- /help
-```
-
-## 自动化发布流程
-
-每次 Release Please 合并 `chore(main): release x.y.z` PR 后：
-
-1. Release Please 打 tag `vx.y.z`
-2. GitHub Actions 触发 `release.yml`
-3. `publish-docker` job 构建并推送镜像
-4. 镜像标签：`latest` + `vx.y.z` + `x.y`
-
-## 参考
-
-- [Release workflow](https://github.com/timerwhou/team-dev-assistant/blob/main/.github/workflows/release.yml)
-- [GHCR 官方文档](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry)
+### 参数解释
+- `--read-only`：强制容器文件系统只读，防止恶意写入。
+- `--cap-drop=ALL`：剥离所有 Linux 特权能力，防止容器逃逸。
+- `--security-opt=no-new-privileges`：防止提权。
+- `-v ...:ro`：Playbook 通过只读挂载注入，确保数据不被篡改。
+- `MCP_API_KEY`：启用 Bearer Token 鉴权，拒绝未授权访问。

@@ -92,7 +92,7 @@ jobs:
   eval-gate:
     name: Eval Gate
     needs: changes
-    if: needs.changes.outputs.code == 'true' && !startsWith(github.head_ref, 'release-please--branches--main') && github.actor != 'dependabot[bot]'
+    if: needs.changes.outputs.code == 'true' && github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
