@@ -1,13 +1,10 @@
 import type { EmbeddingProvider } from "./types";
 
 export class OllamaEmbeddingProvider implements EmbeddingProvider {
-  private baseUrl: string;
-  private model: string;
-
-  constructor() {
-    this.baseUrl = process.env.OLLAMA_BASE_URL || "http://localhost:11434";
-    this.model = process.env.OLLAMA_MODEL || "nomic-embed-text";
-  }
+  constructor(
+    private baseUrl: string,
+    private model: string
+  ) {}
 
   async embed(texts: string[]): Promise<number[][]> {
     const promises = texts.map(text => 
@@ -21,7 +18,7 @@ export class OllamaEmbeddingProvider implements EmbeddingProvider {
           throw new Error(`Ollama Embedding failed (${res.status}): ${err}`);
         }
         const data = await res.json() as { embedding: number[] };
-        return data.embedding as number[];
+        return data.embedding;
       })
     );
     return Promise.all(promises);

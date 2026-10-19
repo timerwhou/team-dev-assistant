@@ -40,7 +40,10 @@ test("VectorRetriever (Mock) 支持语义召回", async () => {
 });
 
 test("AsyncHybridRetriever 自动进行决策图谱 1-hop 扩展", async () => {
-  const hybrid = new AsyncHybridRetriever();
+  // 显式注入基于 Mock 的 VectorRetriever，避免测试环境依赖真实 API Key
+  const mockVectorRetriever = new VectorRetriever(new MockEmbeddingProvider());
+  const hybrid = new AsyncHybridRetriever(60, 5, mockVectorRetriever);
+  
   const result = await hybrid.retrieveAsync("消息队列选型", sampleEntries);
   // 命中 kafka，会自动扩展召回 redis-alt
   assert.ok(result.some(e => e.id === "kafka"));

@@ -1,19 +1,17 @@
 import type { EmbeddingProvider } from "./types";
 
+// 兼容任何实现了 OpenAI Embedding API 格式的供应商
 export class OpenAIEmbeddingProvider implements EmbeddingProvider {
-  private apiKey: string;
-  private baseUrl: string;
-  private model: string;
-
-  constructor() {
-    this.apiKey = process.env.OPENAI_API_KEY || "";
-    // 行业标准：baseUrl 包含 /v1
-    this.baseUrl = process.env.OPENAI_BASE_URL || "https://api.openai.com/v1";
-    this.model = process.env.EMBEDDING_MODEL || "text-embedding-3-small";
-  }
+  constructor(
+    private apiKey: string,
+    private baseUrl: string,
+    private model: string
+  ) {}
 
   async embed(texts: string[]): Promise<number[][]> {
-    if (!this.apiKey) throw new Error("未配置 OPENAI_API_KEY");
+    if (!this.apiKey) {
+      throw new Error("Embedding API Key 未配置（请检查 EMBEDDING_API_KEY 或 OPENAI_API_KEY）");
+    }
 
     const response = await fetch(`${this.baseUrl}/embeddings`, {
       method: "POST",
@@ -30,6 +28,6 @@ export class OpenAIEmbeddingProvider implements EmbeddingProvider {
     }
 
     const data = await response.json() as { data: { embedding: number[] }[] };
-    return data.data.map((d: any) => d.embedding);
+    return data.data.map((d) => d.embedding);
   }
 }

@@ -13,7 +13,6 @@ function tokenize(text: string): string[] {
     if (run.length === 1) {
       tokens.push(run);
     } else {
-      // 只提取 2-gram，过滤掉“我”“要”“做”这种无意义单字噪音
       for (let i = 0; i < run.length - 1; i++) {
         tokens.push(run.slice(i, i + 2));
       }
@@ -88,6 +87,7 @@ export class VectorRetriever implements AsyncRetriever {
         .map(s => s.entry);
 
     } catch (e) {
+      // 捕获 API 错误或无 Key 错误，平滑降级
       console.warn("[VectorRetriever] 语义检索失败，自动降级到字面匹配:", (e as Error).message);
       return [];
     }
@@ -109,11 +109,13 @@ export class AsyncHybridRetriever {
   private vectorRetriever: VectorRetriever;
   private bm25Retriever: BM25Retriever;
   private k: number;
+  private topK: number;
 
-  constructor(k = 60, private topK = 5) {
-    this.vectorRetriever = new VectorRetriever();
-    this.bm25Retriever = new BM25Retriever();
+  constructor(k = 60, topK = 5, vectorRetriever?: VectorRetriever) {
     this.k = k;
+    this.topK = topK;
+    this.vectorRetriever = vectorRetriever || new VectorRetriever();
+    this.bm25Retriever = new BM25Retriever();
   }
 
   async retrieveAsync(requirement: string, entries: PlaybookEntry[]): Promise<PlaybookEntry[]> {
@@ -135,21 +137,17 @@ export class AsyncHybridRetriever {
     applyRRF(vectorResults);
     applyRRF(bm25Results);
 
-    // 1. 按 RRF 分数排序
     const sortedItems = Array.from(rrfScores.values())
       .sort((a, b) => b.score - a.score);
       
     if (sortedItems.length === 0) return [];
 
-    // 2. 相对分数截断：如果后续节点分数低于第一名的 30%，说明是弱相关噪音，直接剔除
     const topScore = sortedItems[0].score;
     const threshold = topScore * 0.3;
     const filteredItems = sortedItems.filter(item => item.score >= threshold);
 
-    // 3. 截取 Top-K
     const topEntries = filteredItems.slice(0, this.topK).map(item => item.entry);
 
-    // 3. 执行 1-hop 图谱扩展（扩展进来的条目不计入 Top-K 限制，确保关联备选方案一定被看到）
     return this.expandGraph(topEntries, entries);
   }
 
