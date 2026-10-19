@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/timerwhou/team-dev-assistant/compare/v1.0.2...v1.1.0) (2026-10-19)
+
+
+### Features
+
+* v1.1.0 Story [#79](https://github.com/timerwhou/team-dev-assistant/issues/79) 语义检索与决策图谱 ([#91](https://github.com/timerwhou/team-dev-assistant/issues/91)) ([5edc897](https://github.com/timerwhou/team-dev-assistant/commit/5edc8979b72f431b665e1c1201fdee5f8a2d95b2))
+
 ## [1.0.2](https://github.com/timerwhou/team-dev-assistant/compare/v1.0.1...v1.0.2) (2026-10-19)
 
 
