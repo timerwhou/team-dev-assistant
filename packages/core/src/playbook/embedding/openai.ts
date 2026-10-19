@@ -29,7 +29,7 @@ export class OpenAIEmbeddingProvider implements EmbeddingProvider {
       throw new Error(`Embedding API failed (${response.status}): ${errBody}`);
     }
 
-    const data = await response.json();
+    const data = await response.json() as { data: { embedding: number[] }[] };
     return data.data.map((d: any) => d.embedding);
   }
 }

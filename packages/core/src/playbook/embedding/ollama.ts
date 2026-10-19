@@ -20,7 +20,7 @@ export class OllamaEmbeddingProvider implements EmbeddingProvider {
           const err = await res.text();
           throw new Error(`Ollama Embedding failed (${res.status}): ${err}`);
         }
-        const data = await res.json();
+        const data = await res.json() as { embedding: number[] };
         return data.embedding as number[];
       })
     );
