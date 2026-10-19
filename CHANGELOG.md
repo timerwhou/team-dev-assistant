@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.2.0](https://github.com/timerwhou/team-dev-assistant/compare/v1.1.0...v1.2.0) (2026-10-19)
+
+
+### Features
+
+* **mcp:** 支持 Streamable HTTP 传输层，对齐 2026-07-28 安全规范 ([#93](https://github.com/timerwhou/team-dev-assistant/issues/93)) ([645deb3](https://github.com/timerwhou/team-dev-assistant/commit/645deb30fa4c694e1d089e8cd4c59b223e61215b))
+* **security:** 实现生产级安全边界与加固 ([#95](https://github.com/timerwhou/team-dev-assistant/issues/95)) ([e033ce8](https://github.com/timerwhou/team-dev-assistant/commit/e033ce8d35e55657cf0a6f822ac00d78baddebf4))
+* v1.2.0 生产级安全边界与 Eval 架构拆分 ([#96](https://github.com/timerwhou/team-dev-assistant/issues/96)) ([60ec8a7](https://github.com/timerwhou/team-dev-assistant/commit/60ec8a7f6cf1e466c39a3bae4fb315610b72c674))
+
 ## [1.1.0](https://github.com/timerwhou/team-dev-assistant/compare/v1.0.2...v1.1.0) (2026-10-19)
 
 
