@@ -88,33 +88,6 @@ jobs:
           fi
           echo "✅ Playbook 资产与代码中的 @fact 注释完全一致。"
 
-  # ---------- Eval Gate（只在 code 变更时跑 critical 子集） ----------
-  eval-gate:
-    name: Eval Gate
-    needs: changes
-    if: needs.changes.outputs.code == 'true' && github.event_name == 'push'
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: sudo apt-get update && sudo apt-get install -y ripgrep
-      - name: Run critical eval subset
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          OPENAI_BASE_URL: ${{ secrets.OPENAI_BASE_URL }}
-          MODEL: ${{ secrets.MODEL }}
-          EVAL_SUBSET: critical
-        run: pnpm eval
-
-
   # ---------- Docker Build Check (防破坏) ----------
   docker-build-check:
     name: Docker Build Check
@@ -165,7 +138,7 @@ jobs:
   # ---------- 聚合门禁 ----------
   ci-gate:
     name: CI / Required
-    needs: [changes, typecheck, test, eval-gate, docker-build-check, mcp-probe]
+    needs: [changes, typecheck, test, docker-build-check, mcp-probe]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -175,7 +148,6 @@ jobs:
           echo "changes:   ${{ needs.changes.result }}"
           echo "typecheck: ${{ needs.typecheck.result }}"
           echo "test:      ${{ needs.test.result }}"
-          echo "eval-gate: ${{ needs.eval-gate.result }}"
           echo "docker-build-check: ${{ needs.docker-build-check.result }}"
           echo "mcp-probe: ${{ needs.mcp-probe.result }}"
 
@@ -194,10 +166,6 @@ jobs:
             exit 1
           fi
 
-          if [ "${{ needs.eval-gate.result }}" == "failure" ]; then
-            echo "❌ eval-gate 失败（Agent 能力退化）"
-            exit 1
-          fi
 
           if [ "${{ needs.docker-build-check.result }}" == "failure" ]; then
             echo "❌ docker-build-check 失败（Dockerfile 无法构建）"

@@ -1,29 +1,51 @@
 name: Eval
 
 on:
+  # 1. 主干合并时自动触发
+  push:
+    branches: [main]
+    paths:
+      - 'packages/**'
+      - 'apps/**'
+      - 'eval/**'
+      - 'pnpm-lock.yaml'
+      - 'package.json'
+  
+  # 2. 特定 PR 打上 run-eval 标签时触发
+  pull_request:
+    types: [labeled]
+    branches: [main]
+
+  # 3. 手动触发
   workflow_dispatch:
     inputs:
       reason:
         description: "运行评估的原因"
         required: false
         default: "手动触发"
+
+  # 4. 定时巡检（每周一 03:00 UTC，防止第三方模型升级导致能力退化）
   schedule:
-    # 每周一 03:00 UTC（北京时间 11:00）
     - cron: "0 3 * * 1"
+
+permissions:
+  contents: read
 
 jobs:
   eval:
     name: Run Evaluation
+    # 如果是 PR 触发的，必须确保标签是 run-eval
+    if: github.event_name != 'pull_request' || github.event.label.name == 'run-eval'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@v4
         with:
           version: 10
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: pnpm
@@ -43,11 +65,13 @@ jobs:
           EOF2
 
       - name: Run evaluation
+        env:
+          EVAL_SUBSET: ${{ github.event_name == 'pull_request' && 'critical' || 'full' }}
         run: pnpm eval
 
       - name: Upload report
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v4
         with:
           name: eval-report
           path: eval/report/latest.json
