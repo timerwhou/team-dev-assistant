@@ -4,6 +4,12 @@ query-filters:
   - exclude:
       id: js/http-to-file-access
     # 理由：packages/core/src/playbook/writer.ts 负责将经过 HITL 人工确认的决策数据
-    # 沉淀为本地 Markdown 文件。文件路径通过 path.join 和 basename 严格限制在 docs/playbook 内部，
-    # 且数据内容经过 sanitizeTextInput 去除了控制字符。
+    # 沉淀为本地 Markdown 文件。代码内部已经通过 sanitizeTextInput 进行了长度限制
+    # 和恶意标签过滤，且文件路径通过 path.join 和 basename 严格限制在 docs/playbook 内部。
     # 因此，此处的“网络数据→文件写入”是安全且核心的业务逻辑，属于误报，予以豁免。
+  - exclude:
+      id: js/file-access-to-http
+    # 理由：packages/core/src/playbook/embedding/ 目录下的 Provider 会将本地 Playbook
+    # (业务事实与技术规约) 作为上下文，通过 fetch 发送给 OpenAI / Ollama 等大模型服务。
+    # 这是「架构记忆体」产品的核心闭环逻辑，不存在恶意数据窃取风险。
+    # 发送的数据仅包含用户主动沉淀的 Markdown 内容，属于合理的业务出站请求，予以豁免。
