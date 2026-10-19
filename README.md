@@ -86,6 +86,30 @@ pnpm dev "/inject 设计一个支付回调"
 # 复制输出的高密度 Prompt，粘贴给 ChatGPT / Claude Web
 ```
 
+## 🛡️ 安全部署指南
+
+在生产环境运行 MCP Server 时，请务必遵循最小权限原则，防止容器逃逸与未授权访问。
+
+### 1. 启用鉴权 (HTTP 模式)
+设置 `MCP_API_KEY` 环境变量，外部客户端调用时必须携带 `Authorization: Bearer <your-key>` 头。
+
+### 2. 只读挂载与能力剥离
+使用以下 Docker 命令启动容器，确保文件系统只读，并移除所有特权 Capabilities：
+
+```bash
+docker run -d --rm \
+  -p 3000:3000 \
+  -e MCP_TRANSPORT=http \
+  -e MCP_API_KEY=your-secure-token \
+  --read-only \
+  --cap-drop=ALL \
+  --security-opt=no-new-privileges \
+  -v $(pwd)/docs/playbook:/app/docs/playbook:ro \
+  ghcr.io/timerwhou/team-dev-assistant:latest
+```
+
+> **注意**：由于 `--read-only` 限制了写入，容器内部无法修改文件。Playbook 资产通过外部的只读挂载（`:ro`）注入，防止恶意代码被篡改后持久化。
+
 ## 🏗️ 核心特性
 
 - **Team Playbook**：业务事实与技术规约的沉淀闭环。
