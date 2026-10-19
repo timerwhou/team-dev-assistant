@@ -106,11 +106,37 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: sudo apt-get update && sudo apt-get install -y ripgrep
+      # 1. 缓存 Ollama 模型，实现热启动（首次下载约 300MB，后续秒回）
+      - name: Cache Ollama Models
+        uses: actions/cache@v4
+        with:
+          path: ~/.ollama/models
+          key: ${{ runner.os }}-ollama-qwen2.5-0.5b
+
+      # 2. 安装并启动本地推理服务
+      - name: Setup Ollama
+        run: |
+          curl -fsSL https://ollama.com/install.sh | sh
+          ollama serve &
+          # 等待服务启动就绪
+          for i in {1..30}; do
+            if curl -s http://localhost:11434/api/tags > /dev/null; then
+              echo "Ollama is ready!"
+              break
+            fi
+            sleep 2
+          done
+
+      # 3. 拉取极轻量模型（如果缓存命中则极快）
+      - name: Pull Model
+        run: ollama pull qwen2.5:0.5b
+
+      # 4. 执行 Eval（通过 OpenAI 兼容协议无缝对接本地 Ollama）
       - name: Run critical eval subset
         env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          OPENAI_BASE_URL: ${{ secrets.OPENAI_BASE_URL }}
-          MODEL: ${{ secrets.MODEL }}
+          OPENAI_API_KEY: "ollama"
+          OPENAI_BASE_URL: "http://localhost:11434/v1"
+          MODEL: "qwen2.5:0.5b"
           EVAL_SUBSET: critical
         run: pnpm eval
 
