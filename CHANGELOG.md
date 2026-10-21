@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.5.0](https://github.com/timerwhou/team-dev-assistant/compare/v1.4.1...v1.5.0) (2026-10-21)
+
+
+### Features
+
+* **core:** 实现 LocalCacheEmbeddingProvider，支持完全离线的本地向量缓存 ([#120](https://github.com/timerwhou/team-dev-assistant/issues/120)) ([a7a2266](https://github.com/timerwhou/team-dev-assistant/commit/a7a22664e77a3f5b59a4fa2f91064dde12c7f3a2))
+* **mcp-server:** 企业级多租户隔离与 OAuth 2.1 深度限流 ([#125](https://github.com/timerwhou/team-dev-assistant/issues/125)) ([591cf9e](https://github.com/timerwhou/team-dev-assistant/commit/591cf9ee0407b91f5d561ad0ae6f2c2cc50455ae))
+
+
+### Bug Fixes
+
+* **ci:** 文档站自动跟随发版触发（App Token + v* Tag 双保险） ([#123](https://github.com/timerwhou/team-dev-assistant/issues/123)) ([a4b5359](https://github.com/timerwhou/team-dev-assistant/commit/a4b5359d6c112fbaf93a2a9904f33ba021e3a49a))
+
 ## [1.4.1](https://github.com/timerwhou/team-dev-assistant/compare/v1.4.0...v1.4.1) (2026-10-21)
 
 
