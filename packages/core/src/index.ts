@@ -34,3 +34,6 @@ export * from "./runtime/agent-registry";
 // Remote Capability Market
 export * from "./runtime/remote-types";
 export * from "./runtime/remote-loader";
+
+// Trace Bus
+export * from "./runtime/trace-bus";

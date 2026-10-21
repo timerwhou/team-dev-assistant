@@ -8,6 +8,7 @@ export interface AgenticTraceEvent {
 }
 
 export interface AgenticContext {
+  workflowId?: string;
   requirement: string;
   iteration: number;
   maxIterations: number;

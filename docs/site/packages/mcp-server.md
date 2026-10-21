@@ -104,3 +104,24 @@ Accept: application/json, text/event-stream
 **自定义装配能力：**
 在 `packages/core` 中定义你的 `WorkflowManifest`，Server 启动时会自动按阶段（`context-gathering`, `execution`）按需装载。
 
+
+## 📡 开放 Trace 事件流 (Server-Sent Events)
+
+从 v1.7.0 开始，研发基座开放了内部的执行 Trace 事件流。社区的 Web Dashboard 或 IDE 插件可以订阅此端点，实时获取 Agentic 引擎的“心跳”。
+
+**端点地址：**
+`GET /trace/:workflowId`
+
+**使用示例 (cURL)：**
+```bash
+curl -N http://localhost:3000/trace/my-workflow-123
+```
+
+**接收到的数据流样例：**
+```text
+data: {"iteration":1,"action":"retrieve","detail":"Round 1: 检索 Playbook","timestamp":1792599630250}
+
+data: {"iteration":1,"action":"complete","detail":"完成: 已检索到相关的业务事实或技术规约","timestamp":1792599630251}
+```
+
+> **安全提示**：在生产环境中，请确保在反向代理（如 Nginx）侧开启 SSE 所需的 `proxy_buffering off;`，以获得无延迟的流式体验。
