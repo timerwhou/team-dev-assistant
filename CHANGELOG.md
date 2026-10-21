@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.1](https://github.com/timerwhou/team-dev-assistant/compare/v1.5.0...v1.5.1) (2026-10-21)
+
+
+### Bug Fixes
+
+* **ci:** 消除 deploy-docs 双重触发导致的并发部署冲突 ([#127](https://github.com/timerwhou/team-dev-assistant/issues/127)) ([0c010bd](https://github.com/timerwhou/team-dev-assistant/commit/0c010bd6a9be51cc510bde2e4c75c5f039f428f0))
+
 ## [1.5.0](https://github.com/timerwhou/team-dev-assistant/compare/v1.4.1...v1.5.0) (2026-10-21)
 
 
