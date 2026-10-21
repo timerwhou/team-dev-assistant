@@ -83,7 +83,7 @@ function main() {
   lines.push("");
   lines.push("## 相关文档");
   lines.push("");
-  lines.push("- [设计文档](/design/context-engineering)");
+  lines.push("");
   lines.push("- [ADR-0005: Context Engineering](/adr/0005-context-engineering)");
   lines.push("");
 

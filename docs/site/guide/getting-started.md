@@ -62,6 +62,27 @@ pnpm --filter @tda/coordinator dev "[elicit] package.json"
    ```
    系统会自动扫描注释，并在 `docs/playbook/` 生成标准的 Markdown 资产。
 
+### 体验协同规划与任务治理 (v1.4.0)
+
+1. **无感收集临时任务**
+   ```bash
+   pnpm dev "/todo 修复登录页在 Safari 下的样式错位"
+   ```
+   系统会自动将任务记录在本地，并在配置了 `GITHUB_TOKEN` 的情况下自动创建带 `triage` 标签的 GitHub Issue。
+
+2. **AI 辅助拆解需求**
+   ```bash
+   pnpm dev "/plan 增加基于 OAuth 2.0 的第三方登录"
+   ```
+   系统会结合项目原有的鉴权基座（如 JWT 规约），自动生成 6-8 个带有依赖关系的结构化任务。确认后，一键批量生成 GitHub Issue。
+
+3. **异步裁决架构冲突**
+   如果多个 Agent 或人类同时写入矛盾的 Playbook 事实，系统不会报错卡住，而是自动将其放入 `.pending/`。
+   ```bash
+   pnpm dev "/review-conflicts"
+   ```
+   你可以在任意方便的时候，集中查看这些冲突，并一键采纳或丢弃。
+
 ### 评估集（Eval Gate）
 
 ```bash

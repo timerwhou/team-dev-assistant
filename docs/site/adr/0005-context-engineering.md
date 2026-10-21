@@ -1,4 +1,4 @@
-# 5. 引入 Context Engineering 层
+# 引入 Context Engineering 层
 
 ## 背景
 

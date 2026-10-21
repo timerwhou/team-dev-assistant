@@ -42,10 +42,13 @@ pnpm --filter @tda/coordinator dev "[elicit] package.json"
 **终端会输出**：
 ```text
 🤖 [review] Agent 需要澄清：
-   你确定要让我评审这个文件吗？（输入 confirm 确认）
+   你确定要让我评审这个文件吗？
    请输入 (y/n): 
 ```
+
 输入 `y` 后，Agent 会继续执行并输出评审报告。
+
+> **注意 (v1.4.0 新增)**：当你输入 `y` 确认后，如果本次决策触发了 Playbook 写入，且与现有记忆发生冲突，系统**不会阻塞当前流程**，而是将新记忆静默存入 `.pending/` 待办区。你随时可以通过 `/review-conflicts` 集中处理这些冲突。
 
 ## 相关文档
 

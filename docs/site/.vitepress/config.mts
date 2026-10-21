@@ -1,5 +1,4 @@
 import pkg from "../../../package.json" with { type: "json" };
-
 import { defineConfig } from "vitepress";
 
 export default defineConfig({
@@ -9,6 +8,7 @@ export default defineConfig({
   themeConfig: {
     logo: "/logo.svg",
     siteTitle: "Team Dev Assistant",
+    outline: { level: [2, 3] },
 
     nav: [
       { text: "指南", link: "/guide/getting-started" },
@@ -16,7 +16,6 @@ export default defineConfig({
         text: "核心能力",
         items: [
           { text: "Team Playbook (架构记忆)", link: "/guide/playbook" },
-          { text: "语义检索原理 (1.2.0)", link: "/guide/playbook#进阶-语义检索与向量模型配置" },
           { text: "Context Engineering", link: "/context/" },
           { text: "Eval Regression Gate", link: "/eval/" },
           { text: "HITL & A2A", link: "/a2a/" },
@@ -28,18 +27,11 @@ export default defineConfig({
         items: [
           { text: "CLI 命令行", link: "/apps/cli" },
           { text: "MCP Server (双轨制)", link: "/packages/mcp-server" },
-          { text: "核心包 (Core)", link: "/packages/core" },
-          { text: "应用架构 (Apps)", link: "/apps/coordinator" }
+          { text: "核心包 (Core)", link: "/packages/core" }
         ]
       },
-      {
-        text: "生态与设计",
-        items: [
-          { text: "安全部署指南 (Docker)", link: "/deploy/ghcr" },
-          { text: "架构决策 (ADR)", link: "/adr/0000-use-adrs" },
-          { text: "设计文档", link: "/design/versioning-strategy" }
-        ]
-      },
+      { text: "安全部署", link: "/deploy/ghcr" },
+      { text: "架构决策 (ADR)", link: "/adr/0006-decouple-versioning-from-milestones" },
       {
         text: `v${pkg.version}`,
         items: [
@@ -79,10 +71,10 @@ export default defineConfig({
         { text: "Agent Skills", items: [{ text: "总览", link: "/skills/" }, { text: "Review", link: "/skills/review" }, { text: "Investigate", link: "/skills/investigate" }, { text: "Issues", link: "/skills/issues" }] }
       ],
       "/apps/": [
-        { text: "应用", items: [{ text: "CLI", link: "/apps/cli" }, { text: "Coordinator", link: "/apps/coordinator" }, { text: "Reviewer", link: "/apps/reviewer" }] }
+        { text: "应用", items: [{ text: "CLI", link: "/apps/cli" }, { text: "Coordinator", link: "/apps/coordinator" }] }
       ],
       "/mcp/": [
-        { text: "MCP 集成", items: [{ text: "总览", link: "/mcp/" }, { text: "客户端支持", link: "/mcp/client-compat" }, { text: "v1 → v2 迁移", link: "/mcp/migration-notes" }] }
+        { text: "MCP 集成", items: [{ text: "总览", link: "/mcp/" }, { text: "客户端支持", link: "/mcp/client-compat" }] }
       ],
       "/packages/": [
         { text: "核心包", items: [{ text: "@tda/core", link: "/packages/core" }, { text: "@tda/tools", link: "/packages/tools" }, { text: "@tda/skills", link: "/packages/skills" }] },
@@ -95,20 +87,12 @@ export default defineConfig({
         {
           text: "Architecture Decisions",
           items: [
-            { text: "0. Use ADRs", link: "/adr/0000-use-adrs" },
-            { text: "1. Adopt MCP Skills Extension", link: "/adr/0001-adopt-mcp-skills-extension" },
-            { text: "2. Upgrade to MCP v2", link: "/adr/0002-upgrade-to-mcp-v2" },
-            { text: "3. Implement Skills as Native Extension", link: "/adr/0003-implement-skills-as-native-extension" },
-            { text: "4. Align Release Versioning", link: "/adr/0004-align-release-versioning-with-milestones" },
-            { text: "6. Decouple Versioning from Milestones", link: "/adr/0006-decouple-versioning-from-milestones" },
-            { text: "7. Eval Regression Gate", link: "/adr/0007-eval-regression-gate" },
-            { text: "8. A2A BiDi & HITL", link: "/adr/0008-a2a-bidi-hitl" },
-            { text: "9. Team Playbook", link: "/adr/0009-team-playbook-architecture" },
+            { text: "版本策略解耦", link: "/adr/0006-decouple-versioning-from-milestones" },
+            { text: "Eval 回归门禁", link: "/adr/0007-eval-regression-gate" },
+            { text: "A2A 双向流与 HITL", link: "/adr/0008-a2a-bidi-hitl" },
+            { text: "Team Playbook 架构", link: "/adr/0009-team-playbook-architecture" },
           ],
         },
-      ],
-      "/design/": [
-        { text: "设计文档", items: [{ text: "版本策略", link: "/design/versioning-strategy" }, { text: "Eval Gate 设计", link: "/design/eval-gate" }, { text: "Context 设计", link: "/design/context-engineering" }] }
       ],
     },
 

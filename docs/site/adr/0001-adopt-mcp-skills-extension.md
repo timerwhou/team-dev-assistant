@@ -1,4 +1,4 @@
-# 1. 采用 MCP Skills Extension 分发 Skill
+# 采用 MCP Skills Extension 分发 Skill
 
 ## 背景
 

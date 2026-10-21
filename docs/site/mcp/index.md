@@ -37,5 +37,4 @@ npx @modelcontextprotocol/inspector pnpm --filter @tda/mcp-server dev
 ## 相关文档
 
 - [客户端支持矩阵](/mcp/client-compat)
-- [v1 → v2 迁移笔记](/mcp/migration-notes)
 - [ADR-0002: Upgrade to MCP v2](/adr/0002-upgrade-to-mcp-v2)
