@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.4.0](https://github.com/timerwhou/team-dev-assistant/compare/v1.3.0...v1.4.0) (2026-10-21)
+
+
+### Features
+
+* **cli:** 实现 /plan 命令与 AI 辅助规划机制 ([#111](https://github.com/timerwhou/team-dev-assistant/issues/111)) ([46323d8](https://github.com/timerwhou/team-dev-assistant/commit/46323d8c8cc0f6d1847f6de29aaf76ef4b1c09cd))
+* **cli:** 实现 /todo 命令与本地/GitHub 双轨同步 ([#110](https://github.com/timerwhou/team-dev-assistant/issues/110)) ([1f7b6eb](https://github.com/timerwhou/team-dev-assistant/commit/1f7b6eb6e46ecf0af2f1ef553f28f4eb7da675e5))
+* **core:** 实现 Playbook 冲突异步治理与 CLI 审查闭环 ([#112](https://github.com/timerwhou/team-dev-assistant/issues/112)) ([86df9af](https://github.com/timerwhou/team-dev-assistant/commit/86df9afc3644522cdcab9aa06cb4d24dd7faf594))
+
+
+### Miscellaneous Chores
+
+* release 1.4.0 ([e90fbd8](https://github.com/timerwhou/team-dev-assistant/commit/e90fbd814091a8532d3f193f501f8b3768c319f4))
+
 ## [1.3.0](https://github.com/timerwhou/team-dev-assistant/compare/v1.2.0...v1.3.0) (2026-10-21)
 
 
