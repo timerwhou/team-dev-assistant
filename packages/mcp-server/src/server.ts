@@ -2,7 +2,8 @@ import { toNodeHandler } from "@modelcontextprotocol/node";
 import { createMcpHandler, McpServer, McpServerFactory } from "@modelcontextprotocol/server";
 import { init } from "@telemetry-dev/sdk";
 import { discoverSkills, registerSkillResources } from "@olaservo/ext-skills/server";
-import { loadPlaybook, capabilityRegistry } from "@tda/core";
+import { loadPlaybook, capabilityRegistry, WorkflowParser } from "@tda/core";
+import type { WorkflowManifest } from "@tda/core";
 import { createServer, IncomingMessage, ServerResponse, Server } from "node:http";
 import path from "node:path";
 import { handleProtectedResourceMetadata, requireScope, verifyToken } from "./auth";
@@ -29,7 +30,7 @@ function maskUrlForLog(url: string | undefined): string {
   }
 }
 
-export function buildServer(ctx: TenantContext): McpServer {
+export function buildServer(ctx: TenantContext, manifest?: WorkflowManifest): McpServer {
   const server = new McpServer(
     { name: "team-dev-assistant", version: "1.3.0" },
     { capabilities: { resources: {} } },
