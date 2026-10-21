@@ -58,3 +58,25 @@ const answer = await runAgent(
 - `ContextBuilder` / `IdentityContextBuilder`
 - `compressToolResult` / `estimateTokens`
 - `recorder` / `createJsonlReporter`
+
+
+## 🧠 运行时能力体系 (v1.6.0 新增)
+
+从 v1.6.0 开始，`@tda/core` 不仅负责检索，更承担了**可装配研发运行时**的职责。
+
+### 1. 能力契约 (Capability Pack)
+工具不再是硬编码的函数，而是实现了 `CapabilityPack` 接口的注册单元。
+开发者可以通过 `CapabilityRegistry` 动态注册或按阶段（Stage）获取能力包。
+
+### 2. 工作流声明 (Workflow Manifest)
+基座支持通过声明式配置（Manifest）来定义研发工作流：
+- **stages**: 定义阶段序列（如 `["context-gathering", "execution"]`）。
+- **stageCapabilities**: 明确每个阶段需要激活哪些能力类型。
+基座会根据当前阶段，动态装配工具子集，从而大幅收敛 LLM 的上下文。
+
+### 3. 执行反馈闭环 (Agentic Loop)
+`AgenticLoop` 为研发基座提供了自主迭代能力。它包含：
+- **Evaluator**: 业务层注入的判定函数。
+- **Trace**: 完整的执行轨迹。
+- **Governance**: 内置最大迭代次数（默认 5 次）防止死循环。
+
