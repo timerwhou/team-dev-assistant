@@ -27,3 +27,6 @@ export * from "./runtime/agentic-loop";
 
 // Agentic Presets
 export * from "./runtime/agentic-presets";
+
+// Agent Registry
+export * from "./runtime/agent-registry";
