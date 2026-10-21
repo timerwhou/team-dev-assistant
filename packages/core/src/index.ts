@@ -30,3 +30,7 @@ export * from "./runtime/agentic-presets";
 
 // Agent Registry
 export * from "./runtime/agent-registry";
+
+// Remote Capability Market
+export * from "./runtime/remote-types";
+export * from "./runtime/remote-loader";
