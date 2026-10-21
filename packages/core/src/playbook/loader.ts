@@ -4,15 +4,23 @@ import { getMonorepoRoot } from "../lib/env";
 import type { PlaybookEntry, Retriever } from "./types";
 import { BM25Retriever, AsyncHybridRetriever } from "./retriever";
 
-const PLAYBOOK_DIR = path.join(getMonorepoRoot(), "docs/playbook");
+/**
+ * 加载 Playbook 规约。
+ * @param customDir 可选：多租户隔离目录。如果不传，默认加载根目录的 docs/playbook
+ */
+export function loadPlaybook(customDir?: string): PlaybookEntry[] {
+  // 🌟 兼容多租户：如果传了 customDir，则去该目录找 playbook 子目录；否则默认找 docs/playbook
+  const targetDir = customDir 
+    ? path.join(customDir, "docs/playbook") 
+    : path.join(getMonorepoRoot(), "docs/playbook");
 
-export function loadPlaybook(): PlaybookEntry[] {
-  if (!fs.existsSync(PLAYBOOK_DIR)) return [];
+  if (!fs.existsSync(targetDir)) return [];
+  
   const entries: PlaybookEntry[] = [];
-  const files = fs.readdirSync(PLAYBOOK_DIR).filter(f => f.endsWith(".md") && f !== "README.md");
+  const files = fs.readdirSync(targetDir).filter(f => f.endsWith(".md") && f !== "README.md");
 
   for (const file of files) {
-    const filePath = path.join(PLAYBOOK_DIR, file);
+    const filePath = path.join(targetDir, file);
     const raw = fs.readFileSync(filePath, "utf-8");
     const match = raw.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
     if (!match) continue;
@@ -107,8 +115,8 @@ function formatContextPrompt(requirement: string, relevant: PlaybookEntry[]): st
 }
 
 // 1.0 同步入口（兼容现有 MCP / 纯本地场景）
-export function getContextPack(requirement: string, retriever?: Retriever): string {
-  const entries = loadPlaybook();
+export function getContextPack(requirement: string, retriever?: Retriever, customDir?: string): string {
+  const entries = loadPlaybook(customDir);
   const activeRetriever = retriever || new BM25Retriever();
   let relevant = activeRetriever.retrieve(requirement, entries);
   // v1.3.0: 触发图谱扩展
@@ -117,8 +125,8 @@ export function getContextPack(requirement: string, retriever?: Retriever): stri
 }
 
 // 1.1 异步入口（支持语义检索，供 CLI /inject 等场景使用）
-export async function getContextPackAsync(requirement: string): Promise<string> {
-  const entries = loadPlaybook();
+export async function getContextPackAsync(requirement: string, customDir?: string): Promise<string> {
+  const entries = loadPlaybook(customDir);
   const hybridRetriever = new AsyncHybridRetriever();
   let relevant = await hybridRetriever.retrieveAsync(requirement, entries);
   // v1.3.0: 触发图谱扩展
