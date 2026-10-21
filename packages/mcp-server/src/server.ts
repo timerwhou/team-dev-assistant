@@ -2,7 +2,7 @@ import { toNodeHandler } from "@modelcontextprotocol/node";
 import { createMcpHandler, McpServer, McpServerFactory } from "@modelcontextprotocol/server";
 import { init } from "@telemetry-dev/sdk";
 import { discoverSkills, registerSkillResources } from "@olaservo/ext-skills/server";
-import { loadPlaybook, capabilityRegistry, WorkflowParser } from "@tda/core";
+import { loadPlaybook, capabilityRegistry, WorkflowParser, traceBus } from "@tda/core";
 import type { WorkflowManifest } from "@tda/core";
 import { createServer, IncomingMessage, ServerResponse, Server } from "node:http";
 import path from "node:path";
@@ -105,6 +105,37 @@ export function startHttpServer(port = parseInt(process.env.MCP_HTTP_PORT || "30
   const useOAuth = !!process.env.OAUTH_ISSUER;
 
   const httpServer = createServer(async (req: IncomingMessage, res: ServerResponse) => {
+    
+    // 🌟 开放的 Trace SSE 端点
+    if (req.url?.startsWith("/trace/")) {
+      const workflowId = req.url.split("/trace/")[1];
+      console.error(`[mcp] 建立 SSE 连接: /trace/${workflowId}`);
+      
+      res.writeHead(200, {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+        "Access-Control-Allow-Origin": "*",
+      });
+      res.flushHeaders(); // 强制立刻发送响应头，进入数据流模式
+      
+      const handler = (event: any) => {
+        console.error(`[mcp] SSE 发送事件:`, event);
+        res.write(`data: ${JSON.stringify(event)}\n\n`);
+      };
+      
+      // 注册监听器
+      traceBus.on(`trace:${workflowId}`, handler);
+      
+      // 客户端断开时清理监听器，防止内存泄漏
+      req.on("close", () => {
+        console.error(`[mcp] 断开 SSE 连接: /trace/${workflowId}`);
+        traceBus.off(`trace:${workflowId}`, handler);
+      });
+      
+      return;
+    }
+
     if (req.url === "/health") {
       res.writeHead(200, { "Content-Type": "text/plain" });
       res.end("ok");

@@ -1,4 +1,5 @@
 import type { AgenticContext, EvaluatorFn, AgenticTraceEvent } from "./agentic-types";
+import { traceBus } from "./trace-bus";
 
 export class AgenticLoop {
   private evaluator: EvaluatorFn;
@@ -47,11 +48,17 @@ export class AgenticLoop {
   }
 
   private logTrace(ctx: AgenticContext, action: AgenticTraceEvent["action"], detail: string) {
-    ctx.trace.push({
+    const event: AgenticTraceEvent = {
       iteration: ctx.iteration,
       action,
       detail,
       timestamp: Date.now(),
-    });
+    };
+    ctx.trace.push(event);
+    
+    // 🌟 发布到全局 Trace 总线
+    if (ctx.workflowId) {
+      traceBus.publish(ctx.workflowId, event);
+    }
   }
 }
