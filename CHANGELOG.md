@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.3.0](https://github.com/timerwhou/team-dev-assistant/compare/v1.2.0...v1.3.0) (2026-10-21)
+
+
+### Features
+
+* **core:** 实现 Context Graph 图谱遍历与 OTel 标准追踪 ([#103](https://github.com/timerwhou/team-dev-assistant/issues/103)) ([f803784](https://github.com/timerwhou/team-dev-assistant/commit/f80378402f11b5e14f3764b144f5ec1401f432a5))
+* **core:** 实现多 Agent 共享 Playbook 冲突检测与协商机制 ([#104](https://github.com/timerwhou/team-dev-assistant/issues/104)) ([5ac0362](https://github.com/timerwhou/team-dev-assistant/commit/5ac0362ab5d2b721b4a7ef7e60598f97179fa228))
+* **security:** OAuth 2.1 资源服务器与 RFC 8707 校验 ([#101](https://github.com/timerwhou/team-dev-assistant/issues/101)) ([ad2f2c6](https://github.com/timerwhou/team-dev-assistant/commit/ad2f2c6f1b1b2b7ca496ada3bc9c43da1695a071))
+
+
+### Miscellaneous Chores
+
+* release 1.3.0 ([d797d9b](https://github.com/timerwhou/team-dev-assistant/commit/d797d9bec02277cb396641ae53b266e416aec86d))
+
 ## [1.2.0](https://github.com/timerwhou/team-dev-assistant/compare/v1.1.0...v1.2.0) (2026-10-19)
 
 
