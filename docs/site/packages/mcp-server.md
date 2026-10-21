@@ -64,6 +64,26 @@ Accept: application/json, text/event-stream
 2. 在 Client 的 `Mappers` 中配置 Audience，将其值设置为 `MCP_CANONICAL_URI`。
 3. 确保 Realm 的 JWKS 端点可通过 `OAUTH_JWKS_URI` 访问。
 
+### 🏢 多租户数据隔离 (Multi-Tenant Isolation)
+作为资源服务器，MCP Server 支持基于 JWT 声明（Claim）的**物理级多租户隔离**。
+当接收到请求时，系统会按以下优先级解析租户 ID：
+1. `tenant_id` (推荐)
+2. `org_id`
+3. `sub` (Subject)
+
+**隔离机制**：
+- 每个租户将拥有独立的运行上下文（`TenantContext`）。
+- 文件读取（`read_file`）和 Playbook 检索将被强制路由到该租户专属的物理目录（`<root>/.tda-tenants/<tenant_id>`）。
+- 默认的 `default-tenant` 将回退到项目的全局配置目录，确保向后兼容。
+
+### 🚦 企业级滑动窗口限流 (Rate Limiting)
+为了防止恶意滥用或意外的流量激增（如 Agent 死循环），本服务内置了**零依赖的滑动窗口限流器（Sliding Window Rate Limiter）**。
+- **默认阈值**：每个租户 **60 次请求 / 分钟**。
+- **超限响应**：HTTP 429 Too Many Requests。
+- **内存安全**：内置后台定期清理机制，自动回收长期不活跃的租户令牌记录。
+
+> 配置方式：无需额外依赖，服务启动即生效。后续可通过环境变量 `MCP_RATE_LIMIT_MAX` 与 `MCP_RATE_LIMIT_WINDOW_MS` 进行深度定制。
+
 ## 核心能力矩阵
 
 | 类型 | 名称 | 说明 |

@@ -19,6 +19,7 @@ export interface AuthResult {
   status?: number;
   error?: string;
   scopes?: string[];
+  tenantId?: string; // 🌟 新增：多租户隔离标识
 }
 
 /**
@@ -31,8 +32,8 @@ export interface AuthResult {
 export async function verifyToken(token: string): Promise<AuthResult> {
   const keySet = getJWKS();
   if (!keySet) {
-    // 如果未配置 OAuth，降级为“无鉴权”模式（仅限本地开发）
-    return { ok: true };
+    // 如果未配置 OAuth，降级为“无鉴权”模式（仅限本地开发），且默认分配到 default 租户
+    return { ok: true, tenantId: "default-tenant" };
   }
 
   if (!MCP_CANONICAL_URI) {
@@ -46,9 +47,19 @@ export async function verifyToken(token: string): Promise<AuthResult> {
       algorithms: ["RS256", "ES256"],
     });
 
-    // 解析 scope（OAuth 2.1 用空格分隔）
-    const scopes = typeof payload.scope === "string" ? payload.scope.split(" ") : [];
-    return { ok: true, scopes };
+    // 解析 scope（OAuth 2.1 用空格分隔），并过滤空字符串防止解析异常
+    const scopes = typeof payload.scope === "string" 
+      ? payload.scope.split(" ").filter(Boolean) 
+      : [];
+      
+    // 🌟 解析 tenant_id，兼容常见的 OIDC Claim 命名
+    const tenantId = 
+      (payload.tenant_id as string) || 
+      (payload.org_id as string) || 
+      (payload.sub as string) || 
+      "default-tenant";
+
+    return { ok: true, scopes, tenantId };
   } catch (e) {
     const msg = (e as Error).message;
     // 区分“过期”和“非法”，便于客户端决定是否刷新
