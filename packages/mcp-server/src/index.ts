@@ -9,16 +9,27 @@ import {
 import { getMonorepoRoot, loadPlaybook } from "@tda/core";
 import { createServer, IncomingMessage, ServerResponse } from "node:http";
 import path from "node:path";
+import { handleProtectedResourceMetadata, requireScope, verifyToken } from "./auth";
 import { registerCodeReviewPrompt } from "./prompts/code-review";
 import { registerProjectFilesResource } from "./resources/project-files";
 import { registerListIssues } from "./tools/list-issues";
 import { registerReadFile } from "./tools/read-file";
 import { registerSearchCode } from "./tools/search-code";
-import { handleProtectedResourceMetadata, requireScope, verifyToken } from "./auth";
 
 const rootDir = process.env.MCP_ROOT || getMonorepoRoot();
 const skillsRoot = path.resolve(rootDir, "packages/skills/skills");
 const skillMap = discoverSkills(skillsRoot);
+
+// 安全规范：日志脱敏函数，仅保留协议与主机名，防止 CodeQL 高危告警
+function maskUrlForLog(url: string | undefined): string {
+  if (!url) return "not-configured";
+  try {
+    const u = new URL(url);
+    return `${u.protocol}//${u.host}`;
+  } catch {
+    return "invalid-url";
+  }
+}
 
 function buildServer(): McpServer {
   const server = new McpServer(
@@ -127,8 +138,6 @@ if (transportMode === "http") {
             return;
           }
 
-          // 细粒度 Scope 校验：读取 Playbook 需要 playbook:read
-          // 注意：MCP 协议层本身不区分具体工具，这里对 /mcp 入口做基础读权限校验
           if (!requireScope(auth.scopes, "playbook:read")) {
             res.writeHead(403, {
               "Content-Type": "application/json",
@@ -163,8 +172,9 @@ if (transportMode === "http") {
       `[mcp] Security: ${useOAuth ? "OAuth 2.1 (JWT)" : expectedApiKey ? "Static API Key" : "DISABLED"}`,
     );
     if (useOAuth) {
-      console.error(`[mcp] OAuth Issuer: ${process.env.OAUTH_ISSUER}`);
-      console.error(`[mcp] Canonical URI: ${process.env.MCP_CANONICAL_URI}`);
+      // 采用脱敏输出，兼顾安全与可运维性
+      console.error(`[mcp] OAuth Issuer (masked): ${maskUrlForLog(process.env.OAUTH_ISSUER)}`);
+      console.error(`[mcp] Canonical URI (masked): ${maskUrlForLog(process.env.MCP_CANONICAL_URI)}`);
     }
   });
 
