@@ -13,7 +13,8 @@
   "dependencies": {
     "@tda/core": "workspace:*",
     "@tda/skills": "workspace:*",
-    "@tda/tools": "workspace:*"
+    "@tda/tools": "workspace:*",
+    "zod": "^4.6.7"
   },
   "license": "MIT",
   "description": "命令行入口"
