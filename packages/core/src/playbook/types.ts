@@ -14,6 +14,10 @@ export interface PlaybookEntry {
   decided_by?: string;
   decided_at?: string;
   supersedes?: string[];
+  // --- Context Graph 扩展字段 (v1.3.0) ---
+  relates_to?: string[];   // 关联的其他 Fact/Stack
+  depends_on?: string[];   // 依赖的前置条件
+  // -------------------------------------
   path: string; 
 }
 

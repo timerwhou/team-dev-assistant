@@ -2,6 +2,8 @@
 import { toNodeHandler } from "@modelcontextprotocol/node";
 import { createMcpHandler, McpServer } from "@modelcontextprotocol/server";
 import { serveStdio } from "@modelcontextprotocol/server/stdio";
+import { instrumentMcpTransport } from "@telemetry-dev/mcp";
+import { init } from "@telemetry-dev/sdk";
 import {
   discoverSkills,
   registerSkillResources,
@@ -16,11 +18,15 @@ import { registerListIssues } from "./tools/list-issues";
 import { registerReadFile } from "./tools/read-file";
 import { registerSearchCode } from "./tools/search-code";
 
+// 初始化 OTel SDK（如果配置了 OTEL_ENABLED）
+if (process.env.OTEL_ENABLED === "true") {
+  init({ serviceName: "team-dev-assistant-mcp" });
+}
+
 const rootDir = process.env.MCP_ROOT || getMonorepoRoot();
 const skillsRoot = path.resolve(rootDir, "packages/skills/skills");
 const skillMap = discoverSkills(skillsRoot);
 
-// 安全规范：日志脱敏函数，仅保留协议与主机名，防止 CodeQL 高危告警
 function maskUrlForLog(url: string | undefined): string {
   if (!url) return "not-configured";
   try {
@@ -96,7 +102,6 @@ if (transportMode === "http") {
         return;
       }
 
-      // RFC 9728: 暴露受保护资源元数据
       if (handleProtectedResourceMetadata(req, res)) return;
 
       const origin = req.headers.origin;
@@ -117,7 +122,6 @@ if (transportMode === "http") {
           ? authHeader.slice(7)
           : undefined;
 
-        // --- OAuth 2.1 资源服务器鉴权（生产模式）---
         if (useOAuth) {
           if (!token) {
             res.writeHead(401, {
@@ -147,7 +151,6 @@ if (transportMode === "http") {
             return;
           }
         } else if (expectedApiKey) {
-          // --- 降级：静态 API Key（仅本地开发/过渡期）---
           if (!token || token !== expectedApiKey) {
             res.writeHead(401, { "Content-Type": "application/json" });
             res.end(JSON.stringify({ error: "Unauthorized: Invalid or missing Bearer Token" }));
@@ -172,7 +175,6 @@ if (transportMode === "http") {
       `[mcp] Security: ${useOAuth ? "OAuth 2.1 (JWT)" : expectedApiKey ? "Static API Key" : "DISABLED"}`,
     );
     if (useOAuth) {
-      // 采用脱敏输出，兼顾安全与可运维性
       console.error(`[mcp] OAuth Issuer (masked): ${maskUrlForLog(process.env.OAUTH_ISSUER)}`);
       console.error(`[mcp] Canonical URI (masked): ${maskUrlForLog(process.env.MCP_CANONICAL_URI)}`);
     }
