@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.0](https://github.com/timerwhou/team-dev-assistant/compare/v1.5.1...v1.6.0) (2026-10-21)
+
+
+### Features
+
+* **core:** 能力契约与注册中心 (Capability Registry) ([#131](https://github.com/timerwhou/team-dev-assistant/issues/131)) ([7dc6ab8](https://github.com/timerwhou/team-dev-assistant/commit/7dc6ab825b0c118e05ca41927a9e1858ebad6485))
+
 ## [1.5.1](https://github.com/timerwhou/team-dev-assistant/compare/v1.5.0...v1.5.1) (2026-10-21)
 
 
