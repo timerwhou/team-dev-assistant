@@ -1,5 +1,5 @@
 import "@tda/core/lib/env";
-import { runAgent, getContextPackAsync, extractFactsFromCode, getMonorepoRoot } from "@tda/core";
+import { runAgent, getContextPackAsync, extractFactsFromCode, getMonorepoRoot, runAgenticInject } from "@tda/core";
 import { recorder, createJsonlReporter, createConsoleReporter } from "@tda/core";
 import { executeToolCalls, openAITools, toolsByName } from "@tda/tools";
 import { skillsByName, listSkills } from "@tda/skills";
@@ -186,14 +186,32 @@ async function main() {
 
   // === 拦截 /inject ===
   if (raw.startsWith("/inject ")) {
-    const requirement = raw.slice(8).trim();
-    const pack = await getContextPackAsync(requirement);
-    if (!pack) {
-      console.log("⚠️ 未找到相关上下文，请确保 docs/playbook 中已沉淀相关资产。");
-    } else {
-      console.log("\n=== 请复制以下内容发送给外部模型 ===\n");
-      console.log(pack);
+    const argsStr = raw.slice(8).trim();
+    const isAgentic = argsStr.includes("--agentic");
+    const requirement = argsStr.replace("--agentic", "").trim();
+
+    if (isAgentic) {
+      console.log("🤖 已开启 Agentic 模式，正在执行多轮深挖检索...");
+      const result = await runAgenticInject(requirement, 3);
+      
+      console.log(`\n=== Agentic 检索完成 (共 ${result.iterations} 轮) ===\n`);
+      console.log(result.text);
       console.log("=====================================\n");
+      
+      if (process.env.TDA_TRACE === "1") {
+        console.log("🔍 Agentic Trace:");
+        console.table(result.trace);
+      }
+    } else {
+      // 保持原有的单次检索逻辑
+      const pack = await getContextPackAsync(requirement);
+      if (!pack) {
+        console.log("⚠️ 未找到相关上下文，请确保 docs/playbook 中已沉淀相关资产。");
+      } else {
+        console.log("\n=== 请复制以下内容发送给外部模型 ===\n");
+        console.log(pack);
+        console.log("=====================================\n");
+      }
     }
     return;
   }
