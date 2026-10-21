@@ -16,3 +16,7 @@ export * from "./playbook";
 // Runtime Capabilities
 export * from "./runtime/types";
 export * from "./runtime/registry";
+
+// Workflow Manifest
+export * from "./runtime/workflow-types";
+export * from "./runtime/workflow-parser";
