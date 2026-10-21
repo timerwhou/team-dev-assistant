@@ -1,4 +1,4 @@
-# 3. 使用 @olaservo/ext-skills 实现原生扩展
+# 使用 @olaservo/ext-skills 实现原生扩展
 
 ## 背景
 

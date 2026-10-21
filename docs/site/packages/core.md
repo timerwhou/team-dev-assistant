@@ -47,8 +47,10 @@ const answer = await runAgent(
 ## 4. Team Playbook (playbook/)
 
 - `loadPlaybook()`：解析本地 `docs/playbook/` 目录中的 Markdown + YAML 资产。
-- `getContextPack()`：基于需求检索相关的 Fact 与 Stack，生成注入大模型的 Prompt 背景包。
+- `getContextPack()` / `getContextPackAsync()`：基于需求检索相关的 Fact 与 Stack，支持语义混合检索与图谱 1-hop 扩展，生成注入大模型的 Prompt 背景包。
 - `extractFactsFromCode()`：多语言 `@fact` 扫描器。
+- `savePlaybookEntry()`：写入新的 Fact。若检测到冲突，会自动存入 `.pending/` 暂存区，返回 `pending_review` 状态，不阻塞业务。
+- `expandContextGraph()`：基于 `relates_to` / `depends_on` 进行 1-hop 图谱扩展召回。
 
 ## 导出清单
 

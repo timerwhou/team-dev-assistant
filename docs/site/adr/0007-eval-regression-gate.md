@@ -1,4 +1,4 @@
-# 7. 建立 Eval Regression Gate
+# 建立 Eval Regression Gate
 
 ## 背景
 
