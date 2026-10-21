@@ -20,3 +20,7 @@ export * from "./runtime/registry";
 // Workflow Manifest
 export * from "./runtime/workflow-types";
 export * from "./runtime/workflow-parser";
+
+// Agentic Runtime
+export * from "./runtime/agentic-types";
+export * from "./runtime/agentic-loop";
