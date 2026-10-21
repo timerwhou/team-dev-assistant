@@ -8,6 +8,10 @@ import crypto from "node:crypto";
 import path from "node:path";
 import { TodoService } from "./services/todo";
 import { GitHubSyncProvider } from "./services/todo-sync";
+import { PlanService } from "./services/plan";
+import type { PlanOutput } from "./services/plan";
+import { PlanSyncProvider } from "./services/plan-sync";
+import readline from "node:readline/promises";
 
 recorder.register(createJsonlReporter());
 if (process.env.TDA_TRACE_CONSOLE === "1") {
@@ -47,6 +51,52 @@ async function main() {
   const rawArgs = process.argv.slice(2).filter(arg => arg !== "--");
   const raw = rawArgs.join(" ").trim();
 
+
+
+  // === 拦截 /plan ===
+  if (raw.startsWith("/plan ")) {
+    const requirement = raw.slice(6).trim();
+    if (!requirement) {
+      console.error("❌ 请提供需求描述。用法: /plan <需求>");
+      return;
+    }
+
+    console.log(`\n🧠 正在分析需求并检索上下文...`);
+    const service = new PlanService();
+    
+    try {
+      const { tasks, contextCount } = await service.generate(requirement);
+      
+      if (contextCount > 0) {
+        console.log(`🔍 已自动注入 ${contextCount} 条相关 Playbook 上下文。`);
+      } else {
+        console.log("⚠️ 未检索到相关 Playbook 上下文，基于通用经验规划。");
+      }
+
+      console.log(`\n📋 生成的计划 (${tasks.length} 个任务):\n`);
+      tasks.forEach((t: PlanOutput["tasks"][number], i: number) => {
+        console.log(`  [${i + 1}] ${t.title}`);
+        if (t.dependsOn) console.log(`      依赖: ${t.dependsOn}`);
+        console.log(`      ${t.description.split("\n")[0]}`);
+      });
+
+      const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+      const answer = await rl.question("\n是否将这些任务同步创建为 GitHub Issue? (y/n): ");
+      rl.close();
+
+      if (answer.toLowerCase() === "y") {
+        console.log("\n🚀 开始创建 Issue...");
+        const syncProvider = new PlanSyncProvider();
+        const created = await syncProvider.syncBatch({ tasks });
+        console.log(`\n✅ 成功创建 ${created.length} 个 Issue。`);
+      } else {
+        console.log("⏭️ 已取消创建。");
+      }
+    } catch (e) {
+      console.error(`❌ 计划生成失败: ${(e as Error).message}`);
+    }
+    return;
+  }
 
   // === 拦截 /todo ===
   if (rawArgs[0] === "/todo") {
@@ -160,6 +210,7 @@ ${fact.content}`;
     console.log("  /sync-facts     扫描代码中的 @fact 注释生成文档");
     console.log("  /todo <描述>    记录临时任务并（尝试）同步到 GitHub");
     console.log("  /todo list      查看待处理任务");
+    console.log("  /plan <需求>    调用 AI 辅助拆解需求并创建 Issue");
     return;
   }
 
