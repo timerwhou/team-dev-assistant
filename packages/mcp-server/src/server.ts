@@ -54,7 +54,7 @@ export function buildServer(ctx: TenantContext): McpServer {
   const packs = capabilityRegistry.getCapabilities();
   for (const pack of packs) {
     server.registerTool(
-      pack.metadata.id,
+      pack.metadata.name, // 🌟 使用向后兼容的 name 暴露给客户端
       {
         description: pack.metadata.description,
         inputSchema: pack.inputSchema.shape,

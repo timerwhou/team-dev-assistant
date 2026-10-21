@@ -5,6 +5,7 @@ import type { CapabilityPack } from "../types";
 export const searchCodeCapability: CapabilityPack = {
   metadata: {
     id: "native:search_code",
+    name: "search_code",
     kind: "tool",
     version: "1.0.0",
     description: "用 ripgrep 在项目内搜索关键词。",

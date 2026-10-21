@@ -13,6 +13,7 @@ type GitHubIssue = {
 export const listIssuesCapability: CapabilityPack = {
   metadata: {
     id: "github:list_issues",
+    name: "list_issues",
     kind: "tool",
     version: "1.0.0",
     description: "查询 GitHub 仓库的 Issue 列表。",

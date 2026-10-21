@@ -5,6 +5,8 @@ export type CapabilityKind = "tool" | "retriever" | "skill";
 export interface CapabilityMetadata {
   /** 唯一标识，例如 "native:search_code", "github:list_issues" */
   id: string;
+  /** 暴露给外部客户端调用的名称，必须向后兼容，例如 "search_code" */
+  name: string;
   /** 能力类型 */
   kind: CapabilityKind;
   /** 语义化版本 */
