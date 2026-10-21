@@ -6,6 +6,7 @@ import { skillsByName, listSkills } from "@tda/skills";
 import fs from "node:fs";
 import crypto from "node:crypto";
 import path from "node:path";
+import { ConflictService } from "./services/conflict";
 import { TodoService } from "./services/todo";
 import { GitHubSyncProvider } from "./services/todo-sync";
 import { PlanService } from "./services/plan";
@@ -95,6 +96,56 @@ async function main() {
     } catch (e) {
       console.error(`❌ 计划生成失败: ${(e as Error).message}`);
     }
+    return;
+  }
+
+
+  // === 拦截 /review-conflicts ===
+  if (raw === "/review-conflicts") {
+    const service = new ConflictService();
+    const files = service.list();
+
+    if (files.length === 0) {
+      console.log("✅ 当前没有待处理的冲突。");
+      return;
+    }
+
+    console.log(`\n⚠️ 发现 ${files.length} 个待处理的冲突文件：\n`);
+    
+    for (let i = 0; i < files.length; i++) {
+      const fileName = files[i];
+      console.log(`  [${i + 1}] ${fileName}`);
+      
+      // 这里可以通过 fs 读取文件内容来展示冲突详情，为了简洁这里只列出文件名
+      // 实际生产中可以解析 frontmatter 打印 conflict_with
+    }
+
+    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+    const answer = await rl.question("\n请输入要采纳的编号 (用逗号分隔, 输入 a 采纳全部, 0 取消): ");
+    rl.close();
+
+    if (answer.trim() === "0") {
+      console.log("⏭️ 已取消操作。");
+      return;
+    }
+
+    let targets: string[] = [];
+    if (answer.trim().toLowerCase() === "a") {
+      targets = files;
+    } else {
+      targets = answer.split(",").map(s => files[parseInt(s.trim()) - 1]).filter(Boolean);
+    }
+
+    let count = 0;
+    for (const target of targets) {
+      try {
+        service.approve(target);
+        count++;
+      } catch (e) {
+        console.error(`  ❌ 处理 ${target} 失败: ${(e as Error).message}`);
+      }
+    }
+    console.log(`\n✅ 已采纳 ${count} 个冲突条目，并合并至正式 Playbook。`);
     return;
   }
 
@@ -211,6 +262,7 @@ ${fact.content}`;
     console.log("  /todo <描述>    记录临时任务并（尝试）同步到 GitHub");
     console.log("  /todo list      查看待处理任务");
     console.log("  /plan <需求>    调用 AI 辅助拆解需求并创建 Issue");
+    console.log("  /review-conflicts 处理 Playbook 冲突的异步暂存文件");
     return;
   }
 

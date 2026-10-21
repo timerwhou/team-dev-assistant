@@ -1,4 +1,4 @@
-import { savePlaybookEntry, PlaybookConflictError } from "@tda/core";
+import { savePlaybookEntry } from "@tda/core";
 import "@tda/core/lib/env";
 import { A2AClient } from "@tda/a2a";
 import type { Task } from "@tda/a2a";
@@ -51,45 +51,22 @@ async function waitForCompletionWithHITL(
       const isConfirmed = answer.toLowerCase() === "y";
 
       if (isConfirmed) {
-        // 拦截沉淀 Hook：人类确认了 Agent 的提议，这构成了架构记忆
         try {
           const factTitle = task.pendingElicit?.question?.slice(0, 30) || "HITL 确认的业务约束";
-          const params = {
-            type: "fact" as const,
+          const result = savePlaybookEntry({
+            type: "fact",
             domain: "hitl-capture",
             title: `HITL 确认：${factTitle}`,
             decision: task.pendingElicit?.question || "人类确认了 Agent 的修改提案",
             rationale: "通过 HITL 交互确认，人类认可了此方案，作为业务基线沉淀。",
             content: `Agent 提议：${task.pendingElicit?.question}\n\n人类操作：确认通过 (y)`,
-          };
+          });
 
-          try {
-            savePlaybookEntry(params);
+          if (result.status === "pending_review") {
+            console.log(`   ⚠️ [Playbook] 检测到与 ${result.conflicts?.length} 条现有记忆冲突，已存入待处理区。`);
+            console.log(`      稍后请运行 /review-conflicts 集中处理。`);
+          } else {
             console.log(`   📚 [Playbook] 已自动沉淀决策到 docs/playbook/`);
-          } catch (e) {
-            if (e instanceof PlaybookConflictError) {
-              console.log("\n⚠️ [Playbook 冲突协商] 检测到与现有记忆冲突：");
-              e.conflicts.forEach((c, i) => {
-                console.log(`   [${i + 1}] ${c.title}`);
-                console.log(`       决策：${c.decision}`);
-                console.log(`       理由：${c.rationale}`);
-              });
-              const rl2 = readline.createInterface({ input: stdin, output: stdout });
-              const choice = await rl2.question("   请选择操作：(o) 覆盖 / (k) 共存 / (c) 取消 > ");
-              rl2.close();
-
-              if (choice.toLowerCase() === "o") {
-                savePlaybookEntry({ ...params, force: true });
-                console.log("   📚 [Playbook] 已强制覆盖并写入。");
-              } else if (choice.toLowerCase() === "k") {
-                savePlaybookEntry({ ...params, force: true });
-                console.log("   📚 [Playbook] 已作为共存条目写入。");
-              } else {
-                console.log("   ⏭️ [Playbook] 已取消本次写入。");
-              }
-            } else {
-              console.error("   ⚠️ [Playbook] 沉淀失败:", e);
-            }
           }
         } catch (e) {
           console.error("   ⚠️ [Playbook] 沉淀失败:", e);

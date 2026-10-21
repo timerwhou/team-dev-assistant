@@ -12,17 +12,16 @@ export interface SavePlaybookParams {
   rationale: string;
   content: string;
   alternatives?: string[];
-  force?: boolean; // 如果为 true，则忽略冲突直接覆盖
+  force?: boolean;
 }
 
-export class PlaybookConflictError extends Error {
-  constructor(public conflicts: PlaybookEntry[]) {
-    super(`检测到 ${conflicts.length} 条潜在冲突的 Playbook 条目`);
-    this.name = "PlaybookConflictError";
-  }
+export interface SaveResult {
+  status: "active" | "pending_review";
+  fileName: string;
+  conflicts?: PlaybookEntry[];
 }
 
-// 安全的纯文本处理：切断污点流，移除控制字符，限制长度防 DoS
+// 安全的纯文本处理
 function sanitizeTextInput(input: string): string {
   if (!input) return "";
   // eslint-disable-next-line no-control-regex
@@ -30,9 +29,6 @@ function sanitizeTextInput(input: string): string {
   return clean.slice(0, 100000);
 }
 
-/**
- * 冲突检测：同 domain 下，标题或决策高度相似的条目视为冲突
- */
 export function detectConflict(params: SavePlaybookParams): PlaybookEntry[] {
   const entries = loadPlaybook();
   const normalizedTitle = params.title.replace(/\s+/g, "").toLowerCase();
@@ -40,16 +36,11 @@ export function detectConflict(params: SavePlaybookParams): PlaybookEntry[] {
 
   return entries.filter((e) => {
     if (e.status !== "active") return false;
-    // 不同 domain 不视为直接冲突
     if (e.domain !== params.domain) return false;
 
     const eTitle = e.title.replace(/\s+/g, "").toLowerCase();
     const eDecision = (e.decision || "").replace(/\s+/g, "").toLowerCase();
 
-    // 冲突判定规则：
-    // 1. 标题完全一致
-    // 2. 决策文本完全一致
-    // 3. 标题互相包含（长度超过 5 字符，避免误判）
     return (
       eTitle === normalizedTitle ||
       (eDecision && eDecision === normalizedDecision) ||
@@ -59,21 +50,23 @@ export function detectConflict(params: SavePlaybookParams): PlaybookEntry[] {
   });
 }
 
-export function savePlaybookEntry(params: SavePlaybookParams): string {
+export function savePlaybookEntry(params: SavePlaybookParams): SaveResult {
   const conflicts = detectConflict(params);
-  if (conflicts.length > 0 && !params.force) {
-    throw new PlaybookConflictError(conflicts);
-  }
+  const isPending = conflicts.length > 0 && !params.force;
 
-  const dir = path.resolve(getMonorepoRoot(), "docs/playbook");
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  // 根据是否冲突，决定写入正式目录还是 .pending 暂存目录
+  const baseDir = isPending
+    ? path.resolve(getMonorepoRoot(), "docs/playbook/.pending")
+    : path.resolve(getMonorepoRoot(), "docs/playbook");
+
+  if (!fs.existsSync(baseDir)) fs.mkdirSync(baseDir, { recursive: true });
 
   const timestamp = Date.now();
   const safeTitle = sanitizeTextInput(params.title)
     .replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, "-")
     .slice(0, 20);
   const fileName = path.basename(`fact-${timestamp}-${safeTitle}.md`);
-  const filePath = path.join(dir, fileName);
+  const filePath = path.join(baseDir, fileName);
   const today = new Date().toISOString().split("T")[0];
 
   let alternativesYaml = "[]";
@@ -85,12 +78,17 @@ export function savePlaybookEntry(params: SavePlaybookParams): string {
   const safeContent = sanitizeTextInput(params.content);
   const safeDecision = sanitizeTextInput(params.decision);
   const safeRationale = sanitizeTextInput(params.rationale);
+  
+  // 如果是 pending_review，记录冲突源 ID
+  const conflictWithYaml = isPending && conflicts.length > 0
+    ? `\nconflict_with: [${conflicts.map(c => c.id).join(", ")}]`
+    : "";
 
   const content = `---
 id: fact-${timestamp}
 type: ${params.type}
 domain: ${params.domain}
-status: active
+status: ${isPending ? "pending_review" : "active"}${conflictWithYaml}
 title: ${safeTitle}
 decision: ${safeDecision}
 alternatives: ${alternativesYaml}
@@ -102,5 +100,10 @@ supersedes: []
 ${safeContent}`;
 
   fs.writeFileSync(filePath, content, "utf-8");
-  return fileName;
+  
+  return {
+    status: isPending ? "pending_review" : "active",
+    fileName,
+    conflicts: isPending ? conflicts : undefined,
+  };
 }
