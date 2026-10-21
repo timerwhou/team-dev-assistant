@@ -2,7 +2,7 @@ import { toNodeHandler } from "@modelcontextprotocol/node";
 import { createMcpHandler, McpServer, McpServerFactory } from "@modelcontextprotocol/server";
 import { init } from "@telemetry-dev/sdk";
 import { discoverSkills, registerSkillResources } from "@olaservo/ext-skills/server";
-import { loadPlaybook } from "@tda/core";
+import { loadPlaybook, capabilityRegistry } from "@tda/core";
 import { createServer, IncomingMessage, ServerResponse, Server } from "node:http";
 import path from "node:path";
 import { handleProtectedResourceMetadata, requireScope, verifyToken } from "./auth";
@@ -10,9 +10,7 @@ import { SlidingWindowRateLimiter } from "./rate-limiter";
 import { resolveTenantContext, TenantContext } from "./tenant";
 import { registerCodeReviewPrompt } from "./prompts/code-review";
 import { registerProjectFilesResource } from "./resources/project-files";
-import { registerListIssues } from "./tools/list-issues";
 import { registerReadFile } from "./tools/read-file";
-import { registerSearchCode } from "./tools/search-code";
 
 if (process.env.OTEL_ENABLED === "true") {
   init({ serviceName: "team-dev-assistant-mcp" });
@@ -40,9 +38,8 @@ export function buildServer(ctx: TenantContext): McpServer {
   const skillsRoot = path.resolve(ctx.rootDir, "packages/skills/skills");
   const skillMap = discoverSkills(skillsRoot);
 
+  // 1. 注册原有的强依赖/资源类工具
   registerReadFile(server, ctx.rootDir);
-  registerSearchCode(server, ctx.rootDir);
-  registerListIssues(server);
   registerCodeReviewPrompt(server);
   registerProjectFilesResource(server, ctx.rootDir);
   
@@ -52,6 +49,27 @@ export function buildServer(ctx: TenantContext): McpServer {
     ttlMs: 60_000,
     cacheScope: "public",
   });
+
+  // 2. 动态装配能力包（Capability Registry）
+  const packs = capabilityRegistry.getCapabilities();
+  for (const pack of packs) {
+    server.registerTool(
+      pack.metadata.name, // 🌟 使用向后兼容的 name 暴露给客户端
+      {
+        description: pack.metadata.description,
+        inputSchema: pack.inputSchema.shape,
+      },
+      // 🌟 边界防腐层：通过强断言阻断 SDK 的复杂泛型推导，保证 CapabilityPack 的纯净性
+      (async (args: any) => {
+        const result = await pack.execute(args, {
+          tenantId: ctx.tenantId,
+          rootDir: ctx.rootDir,
+          env: process.env,
+        });
+        return result;
+      }) as any
+    );
+  }
 
   server.registerResource(
     "team-playbook",

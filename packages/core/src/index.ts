@@ -12,3 +12,7 @@ export { createConsoleReporter } from "./trace/reporters/console";
 export * from "./context";
 
 export * from "./playbook";
+
+// Runtime Capabilities
+export * from "./runtime/types";
+export * from "./runtime/registry";
