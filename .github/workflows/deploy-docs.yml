@@ -6,8 +6,6 @@ on:
     paths:
       - "docs/site/**"
       - ".github/workflows/deploy-docs.yml"
-      - "package.json"        # 发版时 package.json 会发生变动
-      - "CHANGELOG.md"        # 发版时 CHANGELOG.md 会发生变动
   release:
     types: [published]       # 正式发布 Release 时精准触发
   workflow_dispatch:
