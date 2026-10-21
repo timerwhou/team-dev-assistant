@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.6.0](https://github.com/timerwhou/team-dev-assistant/compare/v1.5.1...v1.6.0) (2026-10-21)
+
+
+### Features
+
+* **cli:** 接入 Agentic RAG 闭环模式 ([#139](https://github.com/timerwhou/team-dev-assistant/issues/139)) ([d995fb8](https://github.com/timerwhou/team-dev-assistant/commit/d995fb8ade9b4b1146718ae38b9c77276b371222))
+* **core:** 实现工作流声明与解析层 (Workflow Manifest) ([#134](https://github.com/timerwhou/team-dev-assistant/issues/134)) ([f608007](https://github.com/timerwhou/team-dev-assistant/commit/f608007f800f0183fcae627e75f34fafedc0a29f))
+* **core:** 实现执行-反馈闭环调度器 (AgenticLoop) ([#137](https://github.com/timerwhou/team-dev-assistant/issues/137)) ([962d74a](https://github.com/timerwhou/team-dev-assistant/commit/962d74acde4dff018c21ea1efeffdb37984fa120))
+* **core:** 能力契约与注册中心 (Capability Registry) ([#131](https://github.com/timerwhou/team-dev-assistant/issues/131)) ([7dc6ab8](https://github.com/timerwhou/team-dev-assistant/commit/7dc6ab825b0c118e05ca41927a9e1858ebad6485))
+
 ## [1.5.1](https://github.com/timerwhou/team-dev-assistant/compare/v1.5.0...v1.5.1) (2026-10-21)
 
 
