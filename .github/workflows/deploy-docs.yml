@@ -6,9 +6,7 @@ on:
     paths:
       - "docs/site/**"
       - ".github/workflows/deploy-docs.yml"
-    tags: ['v*']            # 打 Tag 时精准触发文档更新
-  release:
-    types: [published]       # 发版时触发（需配合 App Token 生效）
+    tags: ["v*"]            # 仅认 Tag 与主分支源码变更，彻底消除双重触发
   workflow_dispatch:
 
 permissions:
@@ -18,7 +16,7 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: false
+  cancel-in-progress: true  # 确保部署永远采用最新的触发，防止排队冲突
 
 jobs:
   build:
