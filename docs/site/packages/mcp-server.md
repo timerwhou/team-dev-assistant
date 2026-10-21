@@ -91,3 +91,16 @@ Accept: application/json, text/event-stream
 | **Resource** | `project://playbook` | **核心**：团队业务事实与技术规约。 |
 | **Skill** | `review` / `investigate` | 原生 SEP-2640，可分发的 AI 资产。 |
 | **Tool** | `read_file` / `search_code` | 基础文件检索。 |
+
+
+## 🏢 企业级动态装配（v1.6.0）
+
+在 v1.6.0 中，MCP Server 不再是一股脑暴露所有工具。它通过 **Capability Registry** 将工具降维成插件，并根据 **Workflow Manifest** 进行装配。
+
+**对用户的价值：**
+1. **更懂你的 AI**：你可以声明一个“代码审查”工作流。当你在 Cursor/Claude 中发起审查时，Server 只会挂载 `read_file` 和 `search_code`，从而大幅减少上下文占用，让 AI 回复更精准。
+2. **跨平台扩展**：`list_issues` 是一个 GitHub 实现的能力包。如果你的团队用 Jira，只需开发一个 Jira 能力包，无需修改 Server 核心代码。
+
+**自定义装配能力：**
+在 `packages/core` 中定义你的 `WorkflowManifest`，Server 启动时会自动按阶段（`context-gathering`, `execution`）按需装载。
+
