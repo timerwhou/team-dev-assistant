@@ -19,3 +19,6 @@ eval/benchmark/results/*.json
 
 # 自动生成的 eval 文档
 docs/site/eval/*.md
+
+# Local Todo cache
+.tda/
