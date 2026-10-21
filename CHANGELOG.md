@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.1](https://github.com/timerwhou/team-dev-assistant/compare/v1.4.0...v1.4.1) (2026-10-21)
+
+
+### Bug Fixes
+
+* **ci:** 重构 release.yml 为 Workflow 内串联，彻底消除 GITHUB_TOKEN 递归抑制 ([#116](https://github.com/timerwhou/team-dev-assistant/issues/116)) ([e899cc9](https://github.com/timerwhou/team-dev-assistant/commit/e899cc9d177c0d6c167413dd798af8eb38dbd85b))
+
 ## [1.4.0](https://github.com/timerwhou/team-dev-assistant/compare/v1.3.0...v1.4.0) (2026-10-21)
 
 
