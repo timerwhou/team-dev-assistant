@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.7.0](https://github.com/timerwhou/team-dev-assistant/compare/v1.6.0...v1.7.0) (2026-10-21)
+
+
+### Features
+
+* **coordinator:** 实现基于 Manifest 的 A2A 多 Agent 调度 ([#143](https://github.com/timerwhou/team-dev-assistant/issues/143)) ([e3ba6c3](https://github.com/timerwhou/team-dev-assistant/commit/e3ba6c39aea9e2d28c2ceae18537473125a32847))
+* **core:** 实现远程能力注册与发现 (Remote Capability Loader) ([#146](https://github.com/timerwhou/team-dev-assistant/issues/146)) ([6031931](https://github.com/timerwhou/team-dev-assistant/commit/6031931c33a622204dfc09207c66c699143e2a3f))
+* **core:** 开放 Trace 事件流协议 (Open Trace Protocol) ([#148](https://github.com/timerwhou/team-dev-assistant/issues/148)) ([8197879](https://github.com/timerwhou/team-dev-assistant/commit/8197879c3a66b5039d5eeb62d5f90c1ecca66fca))
+
 ## [1.6.0](https://github.com/timerwhou/team-dev-assistant/compare/v1.5.1...v1.6.0) (2026-10-21)
 
 
