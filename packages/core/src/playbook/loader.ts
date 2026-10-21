@@ -7,7 +7,6 @@ import { BM25Retriever, AsyncHybridRetriever } from "./retriever";
 const PLAYBOOK_DIR = path.join(getMonorepoRoot(), "docs/playbook");
 
 export function loadPlaybook(): PlaybookEntry[] {
-  // ... (保持原有的解析逻辑不变) ...
   if (!fs.existsSync(PLAYBOOK_DIR)) return [];
   const entries: PlaybookEntry[] = [];
   const files = fs.readdirSync(PLAYBOOK_DIR).filter(f => f.endsWith(".md") && f !== "README.md");
@@ -28,7 +27,7 @@ export function loadPlaybook(): PlaybookEntry[] {
     const getArray = (key: string) => {
       const m = yaml.match(new RegExp(`^${key}:\\s*\\n((?:\\s*-\\s*.+\\n?)*)`, "m"));
       if (!m) return [];
-      return m[1].split("\n").map(l => l.replace(/^\\s*-\\s*/, "").trim()).filter(Boolean);
+      return m[1].split("\n").map(l => l.replace(/^\s*-\s*/, "").trim()).filter(Boolean);
     };
 
     entries.push({
@@ -43,10 +42,36 @@ export function loadPlaybook(): PlaybookEntry[] {
       rationale: get("rationale"),
       decided_by: get("decided_by"),
       decided_at: get("decided_at"),
+      supersedes: getArray("supersedes"),
+      relates_to: getArray("relates_to"),
+      depends_on: getArray("depends_on"),
       path: file,
     });
   }
   return entries;
+}
+
+/**
+ * 上下文图谱 1-hop 遍历（v1.3.0）
+ * 给定初始命中的条目，自动沿着 relates_to 和 depends_on 扩展检索
+ */
+export function expandContextGraph(
+  initialEntries: PlaybookEntry[],
+  allEntries: PlaybookEntry[]
+): PlaybookEntry[] {
+  const expanded = new Map(initialEntries.map(e => [e.id, e]));
+  
+  for (const entry of initialEntries) {
+    const relatedIds = [...(entry.relates_to || []), ...(entry.depends_on || [])];
+    for (const relId of relatedIds) {
+      const relatedEntry = allEntries.find(e => e.id === relId && e.status === "active");
+      if (relatedEntry) {
+        expanded.set(relatedEntry.id, relatedEntry);
+      }
+    }
+  }
+  
+  return Array.from(expanded.values());
 }
 
 // 提取公共的 Prompt 格式化逻辑
@@ -85,7 +110,9 @@ function formatContextPrompt(requirement: string, relevant: PlaybookEntry[]): st
 export function getContextPack(requirement: string, retriever?: Retriever): string {
   const entries = loadPlaybook();
   const activeRetriever = retriever || new BM25Retriever();
-  const relevant = activeRetriever.retrieve(requirement, entries);
+  let relevant = activeRetriever.retrieve(requirement, entries);
+  // v1.3.0: 触发图谱扩展
+  relevant = expandContextGraph(relevant, entries);
   return formatContextPrompt(requirement, relevant);
 }
 
@@ -93,6 +120,8 @@ export function getContextPack(requirement: string, retriever?: Retriever): stri
 export async function getContextPackAsync(requirement: string): Promise<string> {
   const entries = loadPlaybook();
   const hybridRetriever = new AsyncHybridRetriever();
-  const relevant = await hybridRetriever.retrieveAsync(requirement, entries);
+  let relevant = await hybridRetriever.retrieveAsync(requirement, entries);
+  // v1.3.0: 触发图谱扩展
+  relevant = expandContextGraph(relevant, entries);
   return formatContextPrompt(requirement, relevant);
 }
