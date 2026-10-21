@@ -6,8 +6,9 @@ on:
     paths:
       - "docs/site/**"
       - ".github/workflows/deploy-docs.yml"
+    tags: ['v*']            # 打 Tag 时精准触发文档更新
   release:
-    types: [published]       # 正式发布 Release 时精准触发
+    types: [published]       # 发版时触发（需配合 App Token 生效）
   workflow_dispatch:
 
 permissions:
