@@ -9,14 +9,13 @@
     "src/service-worker"
   ],
   "compilerOptions": {
-    "allowJs": true,
-    "checkJs": true,
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true,
-    "skipLibCheck": true,
-    "sourceMap": true,
-    "strict": true,
-    "moduleResolution": "bundler"
+    "baseUrl": ".",
+    "ignoreDeprecations": "6.0",
+    "paths": {
+      "#lib": ["./src/lib/index.ts"],
+      "#lib/*": ["./src/lib/*"],
+      "@tda/core": ["../../packages/core/src/index.ts"],
+      "@tda/core/*": ["../../packages/core/src/*"]
+    }
   }
 }

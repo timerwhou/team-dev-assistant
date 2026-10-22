@@ -2,7 +2,7 @@ import { toNodeHandler } from "@modelcontextprotocol/node";
 import { createMcpHandler, McpServer, McpServerFactory } from "@modelcontextprotocol/server";
 import { init } from "@telemetry-dev/sdk";
 import { discoverSkills, registerSkillResources } from "@olaservo/ext-skills/server";
-import { loadPlaybook, capabilityRegistry, WorkflowParser, traceBus } from "@tda/core";
+import { loadPlaybook, capabilityRegistry, WorkflowParser, traceBus, WorkflowManifestSchema } from "@tda/core";
 import type { WorkflowManifest } from "@tda/core";
 import { createServer, IncomingMessage, ServerResponse, Server } from "node:http";
 import fs from "node:fs";
@@ -260,39 +260,186 @@ export function startHttpServer(port = parseInt(process.env.MCP_HTTP_PORT || "30
       return;
     }
 
-    if (req.url?.startsWith("/api/workflows")) {
+    // 🌟 工作流资产 CRUD
+    if (req.url?.startsWith("/api/assets")) {
       const tenantCtx = resolveTenantContext("default-tenant");
       const store = new WorkflowStore(tenantCtx.rootDir);
 
-      if (req.url === "/api/workflows" && req.method === "GET") {
-        const list = store.list();
-        res.writeHead(200, { "Content-Type": "application/json" });
-        res.end(JSON.stringify(list));
+      // 列出所有资产
+      if (req.url === "/api/assets" && req.method === "GET") {
+        res.writeHead(200, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" });
+        res.end(JSON.stringify(store.listAssets()));
         return;
       }
 
-      if (req.url === "/api/workflows" && req.method === "POST") {
+      // 创建新资产
+      if (req.url === "/api/assets" && req.method === "POST") {
+        let body = "";
+        req.on("data", chunk => { body += chunk.toString(); });
+        req.on("end", () => {
+          try {
+            if (!body.trim()) {
+              res.writeHead(400, { "Content-Type": "application/json" });
+              res.end(JSON.stringify({ error: "Empty payload" }));
+              return;
+            }
+            const rawData = JSON.parse(body);
+            const parseResult = WorkflowManifestSchema.safeParse(rawData);
+            if (!parseResult.success) {
+              res.writeHead(400, { "Content-Type": "application/json" });
+              res.end(JSON.stringify({ error: parseResult.error.issues.map((e: any) => e.message).join(", ") }));
+              return;
+            }
+            const asset = store.createAsset(parseResult.data);
+            res.writeHead(201, { "Content-Type": "application/json" });
+            res.end(JSON.stringify(asset));
+          } catch (e: any) {
+            console.error("❌ 后端真实 JSON 解析报错:", e.message);
+            res.writeHead(400, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: "Invalid JSON: " + e.message }));
+          }
+        });
+        return;
+      }
+
+      // 获取单个资产详情
+      if (req.url.startsWith("/api/assets/") && req.method === "GET") {
+        const id = req.url.split("/api/assets/")[1];
+        const asset = store.getAsset(id);
+        if (asset) {
+          res.writeHead(200, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" });
+          res.end(JSON.stringify(asset));
+        } else {
+          res.writeHead(404, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Not found" }));
+        }
+        return;
+      }
+
+      // 更新资产
+      if (req.url.startsWith("/api/assets/") && req.method === "PUT") {
+        const id = req.url.split("/api/assets/")[1];
         let body = "";
         req.on("data", chunk => { body += chunk.toString(); });
         req.on("end", () => {
           try {
             const rawData = JSON.parse(body);
-            const result = store.validateAndSave(rawData);
+            const parseResult = WorkflowManifestSchema.safeParse(rawData.manifest);
+            if (!parseResult.success) {
+              res.writeHead(400, { "Content-Type": "application/json" });
+              res.end(JSON.stringify({ error: parseResult.error.issues.map((e: any) => e.message).join(", ") }));
+              return;
+            }
+            const result = store.updateAsset(id, parseResult.data, rawData.version);
             if (result.success) {
               res.writeHead(200, { "Content-Type": "application/json" });
-              res.end(JSON.stringify({ success: true }));
+              res.end(JSON.stringify(result.asset));
             } else {
-              res.writeHead(400, { "Content-Type": "application/json" });
+              res.writeHead(409, { "Content-Type": "application/json" });
               res.end(JSON.stringify({ error: result.error }));
             }
           } catch (e) {
             res.writeHead(400, { "Content-Type": "application/json" });
-            res.end(JSON.stringify({ error: "Invalid JSON payload" }));
+            res.end(JSON.stringify({ error: "Invalid JSON" }));
           }
         });
         return;
       }
+
+      // 删除资产
+      if (req.url.startsWith("/api/assets/") && req.method === "DELETE") {
+        const id = req.url.split("/api/assets/")[1];
+        const success = store.deleteAsset(id);
+        if (success) {
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ success: true }));
+        } else {
+          res.writeHead(404, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Not found" }));
+        }
+        return;
+      }
     }
+
+    // 🌟 触发工作流执行 (Mock 演示)
+    if (req.url?.startsWith("/api/workflows/execute") && req.method === "POST") {
+      const workflowId = "wf-" + Date.now();
+      
+      // 返回触发成功
+      res.writeHead(200, { 
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*" 
+      });
+      res.end(JSON.stringify({ workflowId, message: "工作流已开始执行" }));
+
+      // 🌟 修复：显式声明为 AgenticTraceEvent 数组，防止 TypeScript 推断为 string
+      const mockTrace: import("@tda/core").AgenticTraceEvent[] = [];
+      
+      setTimeout(() => {
+        const evt = { iteration: 1, action: "retrieve" as const, detail: "context-gathering", timestamp: Date.now() };
+        mockTrace.push(evt);
+        traceBus.publish(workflowId, evt);
+      }, 1000);
+
+      setTimeout(() => {
+        const evt = { iteration: 1, action: "execute" as const, detail: "execution", timestamp: Date.now() };
+        mockTrace.push(evt);
+        traceBus.publish(workflowId, evt);
+      }, 2500);
+      
+      setTimeout(() => {
+        const evt = { iteration: 1, action: "complete" as const, detail: "review", timestamp: Date.now() };
+        mockTrace.push(evt);
+        traceBus.publish(workflowId, evt);
+        
+        // 🌟 将完整 Trace 落盘
+        const store = new MemoryStore();
+        store.recordTrace(workflowId, "Studio Mock Execution", mockTrace, 1, "completed");
+      }, 4000);
+
+      return;
+    }
+
+    // 🌟 获取最近执行历史
+    if (req.url === "/api/traces" && req.method === "GET") {
+      const store = new MemoryStore();
+      res.writeHead(200, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" });
+      res.end(JSON.stringify(store.listRecentExecutions()));
+      return;
+    }
+
+    // 🌟 获取单次执行详情
+    if (req.url?.startsWith("/api/traces/") && req.method === "GET") {
+      const workflowId = req.url.split("/api/traces/")[1];
+      const store = new MemoryStore();
+      const record = store.getTrace(workflowId);
+      if (record) {
+        res.writeHead(200, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" });
+        res.end(JSON.stringify(record));
+      } else {
+        res.writeHead(404, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" });
+        res.end(JSON.stringify({ error: "Trace not found" }));
+      }
+      return;
+    }
+
+    // 🌟 获取可用能力列表
+    if (req.url === "/api/capabilities" && req.method === "GET") {
+      // 从注册中心获取所有能力包
+      const packs = capabilityRegistry.getCapabilities();
+      const list = packs.map(pack => ({
+        id: pack.metadata.id,
+        name: pack.metadata.name,
+        kind: pack.metadata.kind,
+        description: pack.metadata.description,
+        stage: pack.metadata.stage,
+      }));
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify(list));
+      return;
+    }
+
+    
 
     if (req.url?.startsWith("/trace/")) {
       const rawId = req.url.split("/trace/")[1];

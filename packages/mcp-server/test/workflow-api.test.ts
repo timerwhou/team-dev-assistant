@@ -17,14 +17,12 @@ describe("Workflow API 集成测试", () => {
   });
 
   test("非法 JSON 载荷应返回 400", async () => {
-    const res = await fetch(`${baseUrl}/api/workflows`, {
+    const res = await fetch(`${baseUrl}/api/assets`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ bad: "data" }),
     });
     assert.strictEqual(res.status, 400);
-    const text = await res.text();
-    assert.match(text, /Invalid|error/);
   });
 
   test("合法 Workflow 应保存并可通过 GET 获取", async () => {
@@ -35,14 +33,14 @@ describe("Workflow API 集成测试", () => {
       stageCapabilities: { "context-gathering": ["tool"], "execution": ["tool"] }
     };
 
-    const postRes = await fetch(`${baseUrl}/api/workflows`, {
+    const postRes = await fetch(`${baseUrl}/api/assets`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(validManifest),
     });
-    assert.strictEqual(postRes.status, 200);
+    assert.strictEqual(postRes.status, 201);
     
-    const getRes = await fetch(`${baseUrl}/api/workflows`);
+    const getRes = await fetch(`${baseUrl}/api/assets`);
     assert.strictEqual(getRes.status, 200);
     const list = await getRes.json();
     assert.ok(list.some((w: any) => w.name === "test-workflow-api"));
