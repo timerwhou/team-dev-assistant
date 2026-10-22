@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.9.0](https://github.com/timerwhou/team-dev-assistant/compare/v1.8.0...v1.9.0) (2026-10-22)
+
+
+### Features
+
+* **mcp-server:** 实现 Workflow 编排 API 与强类型校验 ([#159](https://github.com/timerwhou/team-dev-assistant/issues/159)) ([201c66a](https://github.com/timerwhou/team-dev-assistant/commit/201c66abbf175c86281fa2f77340b8d4c725f462))
+* **studio:** 可视化 Studio 基础骨架与专业调试面板 ([#162](https://github.com/timerwhou/team-dev-assistant/issues/162)) ([022b273](https://github.com/timerwhou/team-dev-assistant/commit/022b273f2bac5d6258fdcb92bcfa9099bd0e1719))
+* **studio:** 完善可视化 Studio 交互与能力选择 ([#164](https://github.com/timerwhou/team-dev-assistant/issues/164)) ([d1160b4](https://github.com/timerwhou/team-dev-assistant/commit/d1160b4487eb33f531f50a8a8d90719d82b424cc))
+* **studio:** 完成 Studio 打包构建与交互优化 ([#166](https://github.com/timerwhou/team-dev-assistant/issues/166)) ([0c9b9b4](https://github.com/timerwhou/team-dev-assistant/commit/0c9b9b42633ecfcef7a442c08365a0a04b56e25e))
+
 ## [1.8.0](https://github.com/timerwhou/team-dev-assistant/compare/v1.7.0...v1.8.0) (2026-10-22)
 
 
