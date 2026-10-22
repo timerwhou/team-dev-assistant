@@ -5,6 +5,7 @@ import { discoverSkills, registerSkillResources } from "@olaservo/ext-skills/ser
 import { loadPlaybook, capabilityRegistry, WorkflowParser, traceBus } from "@tda/core";
 import type { WorkflowManifest } from "@tda/core";
 import { createServer, IncomingMessage, ServerResponse, Server } from "node:http";
+import fs from "node:fs";
 import path from "node:path";
 import { handleProtectedResourceMetadata, requireScope, verifyToken } from "./auth";
 import { SlidingWindowRateLimiter } from "./rate-limiter";
@@ -97,12 +98,12 @@ export function buildServer(ctx: TenantContext, manifest?: WorkflowManifest): Mc
 }
 
 export function startHttpServer(port = parseInt(process.env.MCP_HTTP_PORT || "3000", 10)): Promise<Server> {
-  const allowedOrigins = process.env.MCP_ALLOWED_ORIGINS?.split(",") || [
-    "http://localhost:5173", // 🌟 允许 Studio (Vite) 的端口
+  // 🌟 从环境变量读取白名单，默认仅在开发环境允许本地 Studio
+  const defaultDevOrigins = process.env.NODE_ENV === "production" ? [] : [
+    "http://localhost:5173",
     "http://127.0.0.1:5173",
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
   ];
+  const allowedOrigins = process.env.MCP_ALLOWED_ORIGINS?.split(",") || defaultDevOrigins;
 
   const expectedApiKey = process.env.MCP_API_KEY;
   const useOAuth = !!process.env.OAUTH_ISSUER;
@@ -123,6 +124,45 @@ export function startHttpServer(port = parseInt(process.env.MCP_HTTP_PORT || "30
       return;
     }
 
+    // 🌟 托管 Studio 静态资源
+    if (req.url?.startsWith("/studio")) {
+      // 将 /studio 映射到静态文件目录
+      const studioDist = path.resolve(process.cwd(), "apps/studio/build");
+      
+      // 如果是 API 请求则放行
+      if (req.url.startsWith("/studio/api")) {
+         // 为了安全，不推荐在 /studio 下做 API，但兜底
+      } else {
+        let filePath = req.url.replace("/studio", "");
+        if (filePath === "/" || filePath === "") filePath = "/index.html";
+        
+        const absolutePath = path.join(studioDist, filePath);
+        
+        // 如果文件存在，直接返回；否则回退到 index.html（支持前端 SPA 路由）
+        if (fs.existsSync(absolutePath) && fs.statSync(absolutePath).isFile()) {
+          const ext = path.extname(absolutePath);
+          const mimeTypes: Record<string, string> = {
+            ".html": "text/html",
+            ".js": "application/javascript",
+            ".css": "text/css",
+            ".svg": "image/svg+xml",
+            ".json": "application/json",
+          };
+          res.writeHead(200, { "Content-Type": mimeTypes[ext] || "application/octet-stream" });
+          fs.createReadStream(absolutePath).pipe(res);
+          return;
+        } else {
+          // SPA 路由回退
+          const indexPath = path.join(studioDist, "index.html");
+          if (fs.existsSync(indexPath)) {
+            res.writeHead(200, { "Content-Type": "text/html" });
+            fs.createReadStream(indexPath).pipe(res);
+            return;
+          }
+        }
+      }
+    }
+
     if (req.url === "/health") {
       res.writeHead(200, { "Content-Type": "text/plain" });
       res.end("ok");
@@ -130,6 +170,22 @@ export function startHttpServer(port = parseInt(process.env.MCP_HTTP_PORT || "30
     }
 
     if (handleProtectedResourceMetadata(req, res)) return;
+
+    // 🌟 获取可用能力列表
+    if (req.url === "/api/capabilities" && req.method === "GET") {
+      // 从注册中心获取所有能力包
+      const packs = capabilityRegistry.getCapabilities();
+      const list = packs.map(pack => ({
+        id: pack.metadata.id,
+        name: pack.metadata.name,
+        kind: pack.metadata.kind,
+        description: pack.metadata.description,
+        stage: pack.metadata.stage,
+      }));
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify(list));
+      return;
+    }
 
     if (req.url?.startsWith("/api/workflows")) {
       const tenantCtx = resolveTenantContext("default-tenant");

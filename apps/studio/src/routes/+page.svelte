@@ -4,6 +4,7 @@
   import { Button } from '#lib/components/ui/button';
   import { Input } from '#lib/components/ui/input';
   import { Label } from '#lib/components/ui/label';
+  import { toast } from 'svelte-sonner';
   import DebugPanel, { type LogEntry } from '#lib/components/DebugPanel.svelte';
   import CapabilitySelector from '#lib/components/CapabilitySelector.svelte';
   import FlowCanvas from '#lib/components/FlowCanvas.svelte';
@@ -43,6 +44,7 @@
     edges = edges.filter((e: any) => e.source !== idToDelete && e.target !== idToDelete);
     selectedNode = null;
     addLog('warn', `删除节点成功`, `节点 ID: ${idToDelete}`);
+    toast.success('节点已删除');
   }
 
   function handleKeydown(event: KeyboardEvent) {
@@ -62,11 +64,13 @@
   async function handleSave() {
     if (nodes.length === 0) {
       addLog('warn', '当前画布为空，无法保存');
+      toast.warning('画布为空', { description: '请先拖入至少一个节点' });
       return;
     }
     
     isSaving = true;
     addLog('info', '开始导出 WorkflowManifest');
+    
     try {
       const stages = nodes.map((n: any) => n.data.stage).filter(Boolean);
       
@@ -94,11 +98,15 @@
         const errBody = await res.json().catch(() => ({}));
         throw new Error(JSON.stringify(errBody, null, 2));
       }
+      
       addLog('info', '✅ 工作流保存成功', JSON.stringify(manifest, null, 2));
+      toast.success('工作流导出成功', { description: '已安全写入本地存储' });
+      
     } catch (e: any) {
       let detail = e.message;
       if (e.message === 'Failed to fetch') detail = `无法连接到后端 API (${API_BASE})。\n请确认后端已启动。`;
       addLog('error', '保存工作流失败', detail);
+      toast.error('保存失败', { description: '请检查后端服务或底部控制台' });
     } finally {
       isSaving = false;
     }
@@ -110,7 +118,6 @@
 <SvelteFlowProvider>
   <div class="flex w-screen h-screen bg-slate-50 font-sans text-slate-900 overflow-hidden relative">
     
-    <!-- 画布区域：传入选中的节点回调 -->
     <FlowCanvas bind:nodes bind:edges {addLog} onSelectNode={(n) => selectedNode = n} />
     
     <!-- 左侧组件库 -->
@@ -144,9 +151,14 @@
     </div>
 
     <div class="absolute top-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-3 px-2 py-1.5 bg-white/90 backdrop-blur-md shadow-sm rounded-lg border border-slate-200/60">
-      <Button onclick={handleSave} disabled={isSaving} class="bg-slate-900 hover:bg-slate-800 text-white shadow-sm">
-        <Download size={16} class="mr-2" />
-        {isSaving ? '保存中...' : '导出并保存'}
+      <Button onclick={handleSave} disabled={isSaving} class="bg-slate-900 hover:bg-slate-800 text-white shadow-sm min-w-[120px]">
+        {#if isSaving}
+          <span class="animate-spin mr-2 border-2 border-white/30 border-t-white rounded-full w-4 h-4"></span>
+          保存中...
+        {:else}
+          <Download size={16} class="mr-2" />
+          导出并保存
+        {/if}
       </Button>
     </div>
 
