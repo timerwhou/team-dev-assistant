@@ -5,4 +5,5 @@
 </script>
 
 {@render children()}
-<Toaster position="top-center" richColors />
+<!-- 🌟 修复：将 Toast 挪到右上角，避免遮挡顶部操作栏 -->
+<Toaster position="top-right" richColors />

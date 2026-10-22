@@ -7,3 +7,16 @@
   --color-background: oklch(1 0 0);
   --color-foreground: oklch(0.145 0 0);
 }
+
+/* 🌟 终极高亮样式：直接作用于 Svelte Flow 的节点外层 */
+.svelte-flow__node.node-running {
+  border: 2px solid #3b82f6 !important;
+  border-radius: 8px;
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.6) !important;
+  animation: pulse-glow 1.5s infinite alternate !important;
+}
+
+@keyframes pulse-glow {
+  from { box-shadow: 0 0 5px rgba(59, 130, 246, 0.3); }
+  to { box-shadow: 0 0 20px rgba(59, 130, 246, 0.8); }
+}
