@@ -193,22 +193,23 @@ export function startHttpServer(port = parseInt(process.env.MCP_HTTP_PORT || "30
       });
       res.end(JSON.stringify({ workflowId, message: "工作流已开始执行" }));
 
-      const mockTrace = [];
+      // 🌟 修复：显式声明为 AgenticTraceEvent 数组，防止 TypeScript 推断为 string
+      const mockTrace: import("@tda/core").AgenticTraceEvent[] = [];
       
       setTimeout(() => {
-        const evt = { iteration: 1, action: "retrieve", detail: "context-gathering", timestamp: Date.now() };
+        const evt = { iteration: 1, action: "retrieve" as const, detail: "context-gathering", timestamp: Date.now() };
         mockTrace.push(evt);
         traceBus.publish(workflowId, evt);
       }, 1000);
 
       setTimeout(() => {
-        const evt = { iteration: 1, action: "execute", detail: "execution", timestamp: Date.now() };
+        const evt = { iteration: 1, action: "execute" as const, detail: "execution", timestamp: Date.now() };
         mockTrace.push(evt);
         traceBus.publish(workflowId, evt);
       }, 2500);
       
       setTimeout(() => {
-        const evt = { iteration: 1, action: "complete", detail: "review", timestamp: Date.now() };
+        const evt = { iteration: 1, action: "complete" as const, detail: "review", timestamp: Date.now() };
         mockTrace.push(evt);
         traceBus.publish(workflowId, evt);
         
