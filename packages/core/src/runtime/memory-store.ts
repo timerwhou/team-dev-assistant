@@ -1,22 +1,25 @@
 import fs from "node:fs";
 import path from "node:path";
-import crypto from "node:crypto";
 import { getMonorepoRoot } from "../lib/env";
+import type { AgenticTraceEvent } from "./agentic-types";
 
-export interface ExecutionMemory {
-  requirementHash: string;
-  requirementSample: string;
-  successfulIterations: number;
-  lastExecutedAt: number;
-  executionCount: number;
+export interface ExecutionRecord {
+  workflowId: string;
+  requirement: string;
+  iterations: number;
+  status: "completed" | "failed" | "aborted";
+  trace: AgenticTraceEvent[];
+  timestamp: number;
+  seq: number; // 🌟 新增自增序号，防止毫秒级时间戳重复导致排序异常
 }
 
 export class MemoryStore {
   private memoryPath: string;
-  private memory: Record<string, ExecutionMemory> = {};
+  private records: ExecutionRecord[] = [];
+  private seqCounter = 0;
 
   constructor(customPath?: string) {
-    this.memoryPath = customPath || path.join(getMonorepoRoot(), ".tda/memory.json");
+    this.memoryPath = customPath || path.join(getMonorepoRoot(), ".tda/trace-history.json");
     this.load();
   }
 
@@ -24,51 +27,48 @@ export class MemoryStore {
     try {
       if (fs.existsSync(this.memoryPath)) {
         const content = fs.readFileSync(this.memoryPath, "utf-8");
-        this.memory = JSON.parse(content);
+        this.records = JSON.parse(content);
+        // 恢复 seqCounter
+        if (this.records.length > 0) {
+          this.seqCounter = Math.max(...this.records.map(r => r.seq || 0));
+        }
       }
     } catch {
-      this.memory = {};
+      this.records = [];
     }
   }
 
   private save() {
     const dir = path.dirname(this.memoryPath);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(this.memoryPath, JSON.stringify(this.memory, null, 2), "utf-8");
+    this.records = this.records.slice(-100);
+    fs.writeFileSync(this.memoryPath, JSON.stringify(this.records, null, 2), "utf-8");
   }
 
-  private hash(requirement: string): string {
-    // 去除空格并转小写，做一个基础的语义归一化
-    const normalized = requirement.replace(/\s+/g, "").toLowerCase();
-    return crypto.createHash("md5").update(normalized).digest("hex");
-  }
-
-  /** 获取特定需求的历史经验（平均收敛轮数） */
-  public getExpectedIterations(requirement: string): number | null {
-    const hash = this.hash(requirement);
-    const record = this.memory[hash];
-    if (!record) return null;
-    return Math.ceil(record.successfulIterations / record.executionCount);
-  }
-
-  /** 记录一次执行经验 */
-  public recordExecution(requirement: string, iterations: number) {
-    const hash = this.hash(requirement);
-    const existing = this.memory[hash];
-    
-    if (existing) {
-      existing.successfulIterations += iterations;
-      existing.executionCount += 1;
-      existing.lastExecutedAt = Date.now();
-    } else {
-      this.memory[hash] = {
-        requirementHash: hash,
-        requirementSample: requirement.slice(0, 50),
-        successfulIterations: iterations,
-        lastExecutedAt: Date.now(),
-        executionCount: 1,
-      };
-    }
+  public recordTrace(workflowId: string, requirement: string, trace: AgenticTraceEvent[], iterations: number, status: "completed" | "failed" | "aborted" = "completed") {
+    this.seqCounter++;
+    this.records.push({
+      workflowId,
+      requirement,
+      iterations,
+      status,
+      trace,
+      timestamp: Date.now(),
+      seq: this.seqCounter
+    });
     this.save();
+  }
+
+  public listRecentExecutions(limit = 20): Pick<ExecutionRecord, "workflowId" | "requirement" | "status" | "timestamp" | "iterations">[] {
+    return this.records
+      .sort((a, b) => b.seq - a.seq) // 使用 seq 排序
+      .slice(0, limit)
+      .map(({ workflowId, requirement, status, timestamp, iterations }) => ({
+        workflowId, requirement, status, timestamp, iterations
+      }));
+  }
+
+  public getTrace(workflowId: string): ExecutionRecord | undefined {
+    return this.records.find(r => r.workflowId === workflowId);
   }
 }

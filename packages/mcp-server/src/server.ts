@@ -14,6 +14,7 @@ import { registerCodeReviewPrompt } from "./prompts/code-review";
 import { registerProjectFilesResource } from "./resources/project-files";
 import { registerReadFile } from "./tools/read-file";
 import { WorkflowStore } from "./workflow-store";
+import { MemoryStore } from "@tda/core";
 
 if (process.env.OTEL_ENABLED === "true") {
   init({ serviceName: "team-dev-assistant-mcp" });
@@ -192,19 +193,53 @@ export function startHttpServer(port = parseInt(process.env.MCP_HTTP_PORT || "30
       });
       res.end(JSON.stringify({ workflowId, message: "工作流已开始执行" }));
 
-      // 延迟推送事件，确保前端 SSE 已就绪
+      const mockTrace = [];
+      
       setTimeout(() => {
-        traceBus.publish(workflowId, { iteration: 1, action: "retrieve", detail: "context-gathering", timestamp: Date.now() });
+        const evt = { iteration: 1, action: "retrieve", detail: "context-gathering", timestamp: Date.now() };
+        mockTrace.push(evt);
+        traceBus.publish(workflowId, evt);
       }, 1000);
 
       setTimeout(() => {
-        traceBus.publish(workflowId, { iteration: 1, action: "execute", detail: "execution", timestamp: Date.now() });
+        const evt = { iteration: 1, action: "execute", detail: "execution", timestamp: Date.now() };
+        mockTrace.push(evt);
+        traceBus.publish(workflowId, evt);
       }, 2500);
       
       setTimeout(() => {
-        traceBus.publish(workflowId, { iteration: 1, action: "complete", detail: "review", timestamp: Date.now() });
+        const evt = { iteration: 1, action: "complete", detail: "review", timestamp: Date.now() };
+        mockTrace.push(evt);
+        traceBus.publish(workflowId, evt);
+        
+        // 🌟 将完整 Trace 落盘
+        const store = new MemoryStore();
+        store.recordTrace(workflowId, "Studio Mock Execution", mockTrace, 1, "completed");
       }, 4000);
 
+      return;
+    }
+
+    // 🌟 获取最近执行历史
+    if (req.url === "/api/traces" && req.method === "GET") {
+      const store = new MemoryStore();
+      res.writeHead(200, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" });
+      res.end(JSON.stringify(store.listRecentExecutions()));
+      return;
+    }
+
+    // 🌟 获取单次执行详情
+    if (req.url?.startsWith("/api/traces/") && req.method === "GET") {
+      const workflowId = req.url.split("/api/traces/")[1];
+      const store = new MemoryStore();
+      const record = store.getTrace(workflowId);
+      if (record) {
+        res.writeHead(200, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" });
+        res.end(JSON.stringify(record));
+      } else {
+        res.writeHead(404, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" });
+        res.end(JSON.stringify({ error: "Trace not found" }));
+      }
       return;
     }
 

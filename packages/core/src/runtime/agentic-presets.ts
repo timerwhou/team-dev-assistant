@@ -14,15 +14,7 @@ export const createMemoryAwareEvaluator = () => {
     const hasFacts = fullText.includes("## 业务事实");
     const hasStacks = fullText.includes("## 技术规约");
 
-    const expectedIterations = memoryStore.getExpectedIterations(ctx.requirement);
-    
-    if (expectedIterations && ctx.iteration >= expectedIterations && (hasFacts || hasStacks)) {
-      return { 
-        complete: true, 
-        reason: `基于历史经验，同类需求平均 ${expectedIterations} 轮即可收敛，当前已满足条件` 
-      };
-    }
-
+    // 🌟 简化经验判断：如果有实质性上下文，直接收敛
     if (hasFacts || hasStacks) {
       return { complete: true, reason: "已检索到相关的业务事实或技术规约" };
     }
@@ -54,8 +46,8 @@ export async function runAgenticInject(
   const loop = new AgenticLoop(createMemoryAwareEvaluator());
   const result = await loop.run(requirement, maxIterations);
   
-  // 1. 记录本轮执行经验（轮数）
-  memoryStore.recordExecution(requirement, result.iteration);
+  // 1. 记录本轮执行经验（完整 Trace）
+  memoryStore.recordTrace(result.workflowId || "auto-" + Date.now(), requirement, result.trace, result.iteration);
   
   // 2. 如果闭环成功，且开启了沉淀，则将执行轨迹固化为 Fact
   if (result.isComplete && options.enablePlaybookPersistence !== false) {
