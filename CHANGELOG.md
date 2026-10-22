@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.8.0](https://github.com/timerwhou/team-dev-assistant/compare/v1.7.0...v1.8.0) (2026-10-22)
+
+
+### Features
+
+* **core:** 实现执行记忆存储与动态评估器 (MemoryStore) ([#151](https://github.com/timerwhou/team-dev-assistant/issues/151)) ([1ed88d3](https://github.com/timerwhou/team-dev-assistant/commit/1ed88d3876f8a8c3044a8f3175573bee158b8877))
+* **core:** 成功轨迹沉淀为 Workflow Fact ([#154](https://github.com/timerwhou/team-dev-assistant/issues/154)) ([e587b67](https://github.com/timerwhou/team-dev-assistant/commit/e587b671281fb89e0fae71374b07941c3be1074e))
+
+
+### Bug Fixes
+
+* **mcp-server:** 日志脱敏，彻底修复 Log Injection ([#156](https://github.com/timerwhou/team-dev-assistant/issues/156)) ([eecbdef](https://github.com/timerwhou/team-dev-assistant/commit/eecbdefbada2e728e9221b7ffdab435a18640ed2))
+
 ## [1.7.0](https://github.com/timerwhou/team-dev-assistant/compare/v1.6.0...v1.7.0) (2026-10-21)
 
 
