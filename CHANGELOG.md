@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.11.0](https://github.com/timerwhou/team-dev-assistant/compare/v1.10.0...v1.11.0) (2026-10-22)
+
+
+### Features
+
+* **studio:** 实现工作流画廊与资产化管理体系 ([#175](https://github.com/timerwhou/team-dev-assistant/issues/175)) ([927f98f](https://github.com/timerwhou/team-dev-assistant/commit/927f98fb3db2bad777d90f21e0e3cf142ca4d02b))
+
 ## [1.10.0](https://github.com/timerwhou/team-dev-assistant/compare/v1.9.0...v1.10.0) (2026-10-22)
 
 
