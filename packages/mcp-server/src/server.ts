@@ -136,7 +136,17 @@ export function startHttpServer(port = parseInt(process.env.MCP_HTTP_PORT || "30
         let filePath = req.url.replace("/studio", "");
         if (filePath === "/" || filePath === "") filePath = "/index.html";
         
-        const absolutePath = path.join(studioDist, filePath);
+        // 🛡️ 安全修复：使用 path.resolve 规范化路径，防止 ../ 穿越攻击
+        const safePath = path.normalize(filePath).replace(/^(\.\.[/\\])+/, "");
+        const absolutePath = path.resolve(studioDist, "." + safePath);
+        const rootDir = path.resolve(studioDist);
+
+        // 校验绝对路径是否越出根目录
+        if (!absolutePath.startsWith(rootDir + path.sep) && absolutePath !== rootDir) {
+          res.writeHead(403);
+          res.end("Forbidden: Path traversal detected");
+          return;
+        }
         
         // 如果文件存在，直接返回；否则回退到 index.html（支持前端 SPA 路由）
         if (fs.existsSync(absolutePath) && fs.statSync(absolutePath).isFile()) {
