@@ -12,7 +12,7 @@ import { resolveTenantContext, TenantContext } from "./tenant";
 import { registerCodeReviewPrompt } from "./prompts/code-review";
 import { registerProjectFilesResource } from "./resources/project-files";
 import { registerReadFile } from "./tools/read-file";
-import { WorkflowStore } from "./workflow-store"; // 🌟 引入存储
+import { WorkflowStore } from "./workflow-store";
 
 if (process.env.OTEL_ENABLED === "true") {
   init({ serviceName: "team-dev-assistant-mcp" });
@@ -98,6 +98,8 @@ export function buildServer(ctx: TenantContext, manifest?: WorkflowManifest): Mc
 
 export function startHttpServer(port = parseInt(process.env.MCP_HTTP_PORT || "3000", 10)): Promise<Server> {
   const allowedOrigins = process.env.MCP_ALLOWED_ORIGINS?.split(",") || [
+    "http://localhost:5173", // 🌟 允许 Studio (Vite) 的端口
+    "http://127.0.0.1:5173",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
   ];
@@ -106,6 +108,21 @@ export function startHttpServer(port = parseInt(process.env.MCP_HTTP_PORT || "30
   const useOAuth = !!process.env.OAUTH_ISSUER;
 
   const httpServer = createServer(async (req: IncomingMessage, res: ServerResponse) => {
+    // 🌟 全局 CORS 头部处理
+    const origin = req.headers.origin;
+    if (origin && allowedOrigins.includes(origin)) {
+      res.setHeader("Access-Control-Allow-Origin", origin);
+      res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+      res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    }
+
+    // 🌟 处理 OPTIONS 预检请求
+    if (req.method === "OPTIONS") {
+      res.writeHead(204);
+      res.end();
+      return;
+    }
+
     if (req.url === "/health") {
       res.writeHead(200, { "Content-Type": "text/plain" });
       res.end("ok");
@@ -114,16 +131,7 @@ export function startHttpServer(port = parseInt(process.env.MCP_HTTP_PORT || "30
 
     if (handleProtectedResourceMetadata(req, res)) return;
 
-    const origin = req.headers.origin;
-    if (origin && !allowedOrigins.includes(origin) && !origin.startsWith("http://localhost") && !origin.startsWith("http://127.0.0.1")) {
-      res.writeHead(403);
-      res.end("Forbidden Origin");
-      return;
-    }
-
-    // 🌟 API 路由：Workflow 编排 (简易多租户路由)
     if (req.url?.startsWith("/api/workflows")) {
-      // 用默认租户作为示例（实际生产需从 Header 或 Token 提取）
       const tenantCtx = resolveTenantContext("default-tenant");
       const store = new WorkflowStore(tenantCtx.rootDir);
 
@@ -157,7 +165,6 @@ export function startHttpServer(port = parseInt(process.env.MCP_HTTP_PORT || "30
       }
     }
 
-    // 🌟 开放的 Trace SSE 端点
     if (req.url?.startsWith("/trace/")) {
       const rawId = req.url.split("/trace/")[1];
       
@@ -169,14 +176,12 @@ export function startHttpServer(port = parseInt(process.env.MCP_HTTP_PORT || "30
       }
 
       const workflowId = rawId;
-      
       console.error("[mcp] 建立 SSE 连接"); 
       
       res.writeHead(200, {
         "Content-Type": "text/event-stream",
         "Cache-Control": "no-cache",
         "Connection": "keep-alive",
-        "Access-Control-Allow-Origin": "*",
       });
       res.flushHeaders();
 
