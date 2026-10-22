@@ -1,21 +1,20 @@
 <script lang="ts">
-  import { SvelteFlowProvider, type NodeTypes } from '@xyflow/svelte';
+  import { onMount } from 'svelte';
+  import { SvelteFlowProvider } from '@xyflow/svelte';
   import { Download, LayoutTemplate, Settings2, X, PanelLeftClose, PanelLeftOpen, Trash2, Info, Play, Activity } from 'lucide-svelte';
   import { Button } from '#lib/components/ui/button';
   import { Input } from '#lib/components/ui/input';
   import { Label } from '#lib/components/ui/label';
   import { toast } from 'svelte-sonner';
+  import { page } from '$app/state';
   import DebugPanel, { type LogEntry } from '#lib/components/DebugPanel.svelte';
   import CapabilitySelector from '#lib/components/CapabilitySelector.svelte';
   import FlowCanvas from '#lib/components/FlowCanvas.svelte';
-  import StatusNode from '#lib/components/StatusNode.svelte';
+  import type { FlowNode, FlowEdge, LogType, AddLogFn } from '#lib/types';
+  import { mapNodesToManifest } from '#lib/utils';
+  import type { WorkflowManifest } from '@tda/core';
 
   const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:3000';
-
-  // 🌟 注册自定义节点类型
-  const nodeTypes: NodeTypes = {
-    status: StatusNode,
-  };
 
   const STAGES_CONFIG = [
     { stage: 'context-gathering', label: 'Context Gathering', desc: '上下文收集', color: 'bg-blue-500' },
@@ -23,16 +22,48 @@
     { stage: 'review', label: 'Review', desc: '审查阶段', color: 'bg-purple-500' }
   ];
 
-  let nodes = $state.raw<any[]>([]);
-  let edges = $state.raw<any[]>([]);
-  let selectedNode = $state<any>(null);
+  // 🌟 使用明确的类型定义，干掉 any
+  
+  
+  let nodes = $state.raw<FlowNode[]>([]);
+  let edges = $state.raw<FlowEdge[]>([]);
+  let selectedNode = $state<FlowNode | null>(null);
+  
   let isSaving = $state(false);
   let isRunning = $state(false);
   let isSidebarOpen = $state(true);
   let isConsoleOpen = $state(false);
-  let historyList = $state<any[]>([]);
-  let showHistory = $state(false);
   let logs = $state<LogEntry[]>([]);
+  let currentAssetId = $state<string | null>(null);
+  let historyList = $state<Array<{ workflowId: string; requirement: string; status: string; timestamp: number; iterations: number }>>([]);
+  let showHistory = $state(false);
+
+  onMount(async () => {
+    const id = page.url.searchParams.get('id');
+    if (id) {
+      try {
+        const res = await fetch(`${API_BASE}/api/assets/${id}`);
+        if (res.ok) {
+          const asset = await res.json();
+          currentAssetId = asset.id;
+          nodes = Object.entries(asset.manifest.stageCapabilities).map(([stage, caps], index) => ({
+            id: `node_${Date.now()}_${index}`,
+            type: 'status',
+            position: { x: 100, y: 100 + index * 120 },
+            data: {
+              label: stage,
+              stage: stage,
+              capabilities: caps as string[],
+              status: undefined,
+            }
+          }));
+          addLog('info', `已加载资产: ${asset.name}`);
+        }
+      } catch {
+        toast.error('加载失败');
+      }
+    }
+  });
 
   function addLog(type: 'info'|'error'|'warn', title: string, detail?: string, nodeId?: string) {
     const time = new Date().toLocaleTimeString();
@@ -40,17 +71,17 @@
     if (type === 'error') isConsoleOpen = true;
   }
 
-  function updateNodeData(key: string, value: any) {
+  function updateNodeData(key: keyof FlowNode['data'], value: string | string[]) {
     if (!selectedNode) return;
-    nodes = nodes.map((n: any) => n.id === selectedNode.id ? { ...n, data: { ...n.data, [key]: value } } : n);
-    selectedNode = nodes.find((n: any) => n.id === selectedNode.id);
+    nodes = nodes.map(n => n.id === selectedNode!.id ? { ...n, data: { ...n.data, [key]: value } } : n);
+    selectedNode = nodes.find(n => n.id === selectedNode!.id) || null;
   }
 
   function deleteSelectedNode() {
     if (!selectedNode) return;
     const idToDelete = selectedNode.id;
-    nodes = nodes.filter((n: any) => n.id !== idToDelete);
-    edges = edges.filter((e: any) => e.source !== idToDelete && e.target !== idToDelete);
+    nodes = nodes.filter(n => n.id !== idToDelete);
+    edges = edges.filter(e => e.source !== idToDelete && e.target !== idToDelete);
     selectedNode = null;
     addLog('warn', `删除节点成功`, `节点 ID: ${idToDelete}`);
     toast.success('节点已删除');
@@ -65,11 +96,6 @@
     }
   }
 
-  function focusNode(nodeId: string) {
-    const node = nodes.find((n: any) => n.id === nodeId);
-    if (node) selectedNode = node;
-  }
-
   async function fetchHistory() {
     try {
       const res = await fetch(`${API_BASE}/api/traces`);
@@ -82,27 +108,25 @@
   async function loadTrace(workflowId: string) {
     try {
       const res = await fetch(`${API_BASE}/api/traces/${workflowId}`);
-      if (!res.ok) throw new Error("未找到该记录");
+      if (!res.ok) throw new Error('未找到该记录');
       const record = await res.json();
       
-      // 回填 Console
       logs = record.trace.map((t: any) => ({
         id: crypto.randomUUID(),
-        type: t.action === "complete" ? "info" : "warn",
+        type: t.action === 'complete' ? 'info' : 'warn',
         title: `[回放] ${t.action}`,
         detail: t.detail,
         timestamp: new Date(t.timestamp).toLocaleTimeString()
       }));
       
-      // 回填节点高亮（模拟最后一帧的状态）
-      nodes = nodes.map((n: any) => {
+      nodes = nodes.map(n => {
         const hasEvent = record.trace.some((t: any) => t.detail === n.data.stage);
-        return { ...n, data: { ...n.data, status: hasEvent ? "completed" : undefined } };
+        return { ...n, data: { ...n.data, status: hasEvent ? 'completed' : undefined } };
       });
       
       isConsoleOpen = true;
       showHistory = false;
-      toast.success("历史记录已加载");
+      toast.success('历史记录已加载');
     } catch (e: any) {
       toast.error(e.message);
     }
@@ -110,42 +134,31 @@
 
   async function handleRun() {
     if (nodes.length === 0) {
-      addLog('warn', '画布为空，无法运行');
-      toast.warning('画布为空', { description: '请先拖入节点' });
+      toast.warning('画布为空，无法运行');
       return;
     }
-
     await handleSave();
-    
     isRunning = true;
     addLog('info', '正在触发工作流执行...');
-
     try {
       const res = await fetch(`${API_BASE}/api/workflows/execute`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ workflowId: "current-workflow" })
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ workflowId: currentAssetId || 'draft' })
       });
-
       if (!res.ok) throw new Error('执行请求失败');
       const { workflowId } = await res.json();
-      
       addLog('info', `工作流已启动，ID: ${workflowId}`);
       toast.success('工作流已启动', { description: '正在实时监听执行状态...' });
 
       const eventSource = new EventSource(`${API_BASE}/trace/${workflowId}`);
-      
       eventSource.onmessage = (event) => {
         const traceEvent = JSON.parse(event.data);
         addLog('info', `[SSE 收到] ${traceEvent.action}`, traceEvent.detail);
-
-        // 🌟 正确方式：通过修改 data.status 来驱动自定义节点重新渲染
-        nodes = nodes.map((n: any) => {
-          if (n.data.stage === traceEvent.detail) {
-            return { ...n, data: { ...n.data, status: 'running' } };
-          }
-          // 其他节点恢复普通状态
-          return { ...n, data: { ...n.data, status: undefined } };
+        
+        nodes = nodes.map(n => {
+          const isRunning = n.data.stage === traceEvent.detail;
+          return { ...n, data: { ...n.data, status: isRunning ? 'running' : n.data.status } };
         });
 
         if (traceEvent.action === 'complete') {
@@ -153,18 +166,14 @@
           isRunning = false;
           addLog('info', '✅ 工作流执行完成');
           toast.success('工作流执行完成');
-          
-          // 重置所有节点状态（恢复无高亮）
-          nodes = nodes.map((n: any) => ({ ...n, data: { ...n.data, status: undefined } }));
+          nodes = nodes.map(n => ({ ...n, data: { ...n.data, status: undefined } }));
         }
       };
-
       eventSource.onerror = () => {
         eventSource.close();
         isRunning = false;
         addLog('error', 'SSE 连接中断');
       };
-      
     } catch (e: any) {
       addLog('error', '触发执行失败', e.message);
       isRunning = false;
@@ -172,39 +181,36 @@
   }
 
   async function handleSave() {
-    if (nodes.length === 0) return;
-    
+    if (nodes.length === 0) {
+      toast.warning('画布为空，无法保存');
+      return;
+    }
     isSaving = true;
     addLog('info', '正在保存工作流...');
-    
     try {
-      const stages = nodes.map((n: any) => n.data.stage).filter(Boolean);
-      const stageCapabilities: Record<string, string[]> = {};
-      for (const stage of Array.from(new Set(stages))) {
-        const capsForStage = nodes.filter((n: any) => n.data.stage === stage).flatMap((n: any) => n.data.capabilities || []);
-        stageCapabilities[stage] = Array.from(new Set(capsForStage));
-      }
-
-      const manifest = {
-        name: "studio-workflow-" + Date.now(),
-        description: "Studio 生成的工作流",
-        stages: Array.from(new Set(stages)),
-        stageCapabilities,
-        governance: { maxIterations: 5, maxResultsPerTool: 3 }
-      };
-
-      const res = await fetch(`${API_BASE}/api/workflows`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(manifest)
+      const plainManifest = mapNodesToManifest(nodes, currentAssetId);
+      const url = currentAssetId ? `${API_BASE}/api/assets/${currentAssetId}` : `${API_BASE}/api/assets`;
+      const method = currentAssetId ? 'PUT' : 'POST';
+      const bodyData = method === 'PUT' ? { manifest: plainManifest, version: 1 } : plainManifest;
+      
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bodyData)
       });
-
-      if (!res.ok) throw new Error('保存请求失败');
-      addLog('info', '✅ 工作流保存成功', JSON.stringify(manifest, null, 2));
+      
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        throw new Error(errBody.error || `HTTP ${res.status}`);
+      }
+      const savedData = await res.json();
+      if (!currentAssetId) currentAssetId = savedData.id;
+      
+      addLog('info', '✅ 工作流保存成功', JSON.stringify(savedData, null, 2));
       toast.success('工作流已保存');
     } catch (e: any) {
       addLog('error', '保存失败', e.message);
-      toast.error('保存失败');
+      toast.error(`保存失败: ${e.message}`);
     } finally {
       isSaving = false;
     }
@@ -215,11 +221,9 @@
 
 <SvelteFlowProvider>
   <div class="flex w-screen h-screen bg-slate-50 font-sans text-slate-900 overflow-hidden relative">
+    <FlowCanvas bind:nodes bind:edges {addLog} onSelectNode={(n: FlowNode | null) => selectedNode = n} />
     
-    <!-- 🌟 将 nodeTypes 传递给 FlowCanvas -->
-    <FlowCanvas bind:nodes bind:edges {addLog} {nodeTypes} onSelectNode={(n) => selectedNode = n} />
-    
-    <!-- 左侧组件库、顶部工具栏、右侧属性面板保持不变 -->
+    <!-- 左侧组件库 -->
     <aside class="absolute top-0 left-0 h-full w-64 bg-white border-r border-slate-200 shadow-[4px_0_24px_rgba(0,0,0,0.02)] z-20 flex flex-col transition-transform duration-300 ease-in-out" style="transform: translateX({isSidebarOpen ? '0%' : '-100%'})">
       <div class="h-14 flex items-center justify-between px-4 border-b border-slate-100 shrink-0">
         <div class="flex items-center gap-2">
@@ -254,6 +258,7 @@
         <Download size={16} class="mr-2" />
         {isSaving ? '保存中...' : '保存'}
       </Button>
+      
       <div class="relative">
         <Button variant="outline" onclick={() => { showHistory = !showHistory; if (showHistory) fetchHistory(); }} class="bg-white">
           历史记录
@@ -264,10 +269,7 @@
               <div class="p-3 text-sm text-slate-500 text-center">暂无记录</div>
             {/if}
             {#each historyList as item}
-              <button 
-                class="w-full text-left p-3 hover:bg-slate-50 border-b border-slate-100 last:border-0"
-                onclick={() => loadTrace(item.workflowId)}
-              >
+              <button class="w-full text-left p-3 hover:bg-slate-50 border-b border-slate-100 last:border-0" onclick={() => loadTrace(item.workflowId)}>
                 <div class="text-sm font-medium text-slate-700 truncate">{item.requirement}</div>
                 <div class="text-xs text-slate-400 mt-1 flex justify-between">
                   <span>{new Date(item.timestamp).toLocaleString()}</span>
@@ -278,6 +280,7 @@
           </div>
         {/if}
       </div>
+
       <Button onclick={handleRun} disabled={isRunning} class="bg-blue-600 hover:bg-blue-700 text-white shadow-sm min-w-[120px]">
         {#if isRunning}
           <Activity size={16} class="mr-2 animate-pulse" />
@@ -328,6 +331,6 @@
       {/if}
     </aside>
 
-    <DebugPanel bind:logs bind:isOpen={isConsoleOpen} onNodeClick={focusNode} sidebarOpen={isSidebarOpen} />
+    <DebugPanel bind:logs bind:isOpen={isConsoleOpen} onNodeClick={(id) => selectedNode = nodes.find(n => n.id === id) || null} sidebarOpen={isSidebarOpen} />
   </div>
 </SvelteFlowProvider>

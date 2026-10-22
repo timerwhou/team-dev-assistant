@@ -40,3 +40,6 @@ export * from "./runtime/trace-bus";
 
 // Memory Store
 export * from "./runtime/memory-store";
+
+// Workflow Asset
+export type { WorkflowAsset } from "./runtime/workflow-types";

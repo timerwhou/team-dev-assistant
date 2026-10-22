@@ -1,47 +1,62 @@
 import fs from "node:fs";
 import path from "node:path";
-import { WorkflowManifestSchema, type WorkflowManifest } from "@tda/core";
+import { WorkflowManifestSchema, type WorkflowManifest, type WorkflowAsset } from "@tda/core";
+import { randomUUID } from "node:crypto";
 
 export class WorkflowStore {
   private dir: string;
 
   constructor(rootDir: string) {
-    // 存放在当前租户目录下的 .tda/workflows/ 中
     this.dir = path.join(rootDir, ".tda/workflows");
     if (!fs.existsSync(this.dir)) {
       fs.mkdirSync(this.dir, { recursive: true });
     }
   }
 
-  /** 列出所有已保存的工作流 */
-  public list(): WorkflowManifest[] {
+  private getFilePath(id: string): string {
+    return path.join(this.dir, `${id}.json`);
+  }
+
+  public listAssets(): WorkflowAsset[] {
     if (!fs.existsSync(this.dir)) return [];
-    const files = fs.readdirSync(this.dir).filter(f => f.endsWith(".json"));
-    return files.map(f => {
-      const content = fs.readFileSync(path.join(this.dir, f), "utf-8");
-      return JSON.parse(content) as WorkflowManifest;
-    });
+    return fs.readdirSync(this.dir)
+      .filter(f => f.endsWith(".json"))
+      .map(f => JSON.parse(fs.readFileSync(path.join(this.dir, f), "utf-8")) as WorkflowAsset)
+      .sort((a, b) => b.updatedAt - a.updatedAt);
   }
 
-  /** 保存（覆盖或新建）一个工作流 */
-  public save(manifest: WorkflowManifest): void {
-    // 文件名基于 name 做脱敏处理
-    const safeName = manifest.name.replace(/[^a-zA-Z0-9_-]/g, "_");
-    const filePath = path.join(this.dir, `${safeName}.json`);
-    fs.writeFileSync(filePath, JSON.stringify(manifest, null, 2), "utf-8");
+  public getAsset(id: string): WorkflowAsset | null {
+    const filePath = this.getFilePath(id);
+    if (!fs.existsSync(filePath)) return null;
+    return JSON.parse(fs.readFileSync(filePath, "utf-8")) as WorkflowAsset;
   }
 
-  /** 校验并保存（供 API 调用） */
-  public validateAndSave(rawData: unknown): { success: boolean; error?: string } {
-    const parseResult = WorkflowManifestSchema.safeParse(rawData);
-    if (!parseResult.success) {
-      return { 
-        success: false, 
-        error: parseResult.error.issues.map(e => `${e.path.join(".")}: ${e.message}`).join(", ") 
-      };
+  public createAsset(manifest: WorkflowManifest): WorkflowAsset {
+    const id = randomUUID();
+    const now = Date.now();
+    const asset: WorkflowAsset = { id, name: manifest.name, manifest, createdAt: now, updatedAt: now, version: 1 };
+    fs.writeFileSync(this.getFilePath(id), JSON.stringify(asset, null, 2), "utf-8");
+    return asset;
+  }
+
+  public updateAsset(id: string, manifest: WorkflowManifest, expectedVersion?: number): { success: boolean; error?: string; asset?: WorkflowAsset } {
+    const existing = this.getAsset(id);
+    if (!existing) return { success: false, error: "Asset not found" };
+    if (expectedVersion !== undefined && existing.version !== expectedVersion) {
+      return { success: false, error: "Version conflict" };
     }
-    
-    this.save(parseResult.data);
-    return { success: true };
+
+    const updated: WorkflowAsset = { ...existing, name: manifest.name, manifest, updatedAt: Date.now(), version: existing.version + 1 };
+    fs.writeFileSync(this.getFilePath(id), JSON.stringify(updated, null, 2), "utf-8");
+    return { success: true, asset: updated };
+  }
+
+  public deleteAsset(id: string): boolean {
+    const filePath = this.getFilePath(id);
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+      return true;
+    }
+    return false;
   }
 }
