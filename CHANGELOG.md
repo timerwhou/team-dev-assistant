@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.10.0](https://github.com/timerwhou/team-dev-assistant/compare/v1.9.0...v1.10.0) (2026-10-22)
+
+
+### Features
+
+* **studio:** 实现 SSE 实时 Trace 与节点状态驱动高亮 ([#169](https://github.com/timerwhou/team-dev-assistant/issues/169)) ([1299985](https://github.com/timerwhou/team-dev-assistant/commit/1299985570fd8c1258fcc1a59fc309e5d3d0f18e))
+* **studio:** 实现 Trace 历史持久化与画布回放 ([#172](https://github.com/timerwhou/team-dev-assistant/issues/172)) ([bca613d](https://github.com/timerwhou/team-dev-assistant/commit/bca613d5ff461869a192e5c98f7a33b09d773877))
+
 ## [1.9.0](https://github.com/timerwhou/team-dev-assistant/compare/v1.8.0...v1.9.0) (2026-10-22)
 
 
