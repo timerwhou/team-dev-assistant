@@ -30,6 +30,8 @@
   let isRunning = $state(false);
   let isSidebarOpen = $state(true);
   let isConsoleOpen = $state(false);
+  let historyList = $state<any[]>([]);
+  let showHistory = $state(false);
   let logs = $state<LogEntry[]>([]);
 
   function addLog(type: 'info'|'error'|'warn', title: string, detail?: string, nodeId?: string) {
@@ -66,6 +68,44 @@
   function focusNode(nodeId: string) {
     const node = nodes.find((n: any) => n.id === nodeId);
     if (node) selectedNode = node;
+  }
+
+  async function fetchHistory() {
+    try {
+      const res = await fetch(`${API_BASE}/api/traces`);
+      if (res.ok) historyList = await res.json();
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  async function loadTrace(workflowId: string) {
+    try {
+      const res = await fetch(`${API_BASE}/api/traces/${workflowId}`);
+      if (!res.ok) throw new Error("未找到该记录");
+      const record = await res.json();
+      
+      // 回填 Console
+      logs = record.trace.map((t: any) => ({
+        id: crypto.randomUUID(),
+        type: t.action === "complete" ? "info" : "warn",
+        title: `[回放] ${t.action}`,
+        detail: t.detail,
+        timestamp: new Date(t.timestamp).toLocaleTimeString()
+      }));
+      
+      // 回填节点高亮（模拟最后一帧的状态）
+      nodes = nodes.map((n: any) => {
+        const hasEvent = record.trace.some((t: any) => t.detail === n.data.stage);
+        return { ...n, data: { ...n.data, status: hasEvent ? "completed" : undefined } };
+      });
+      
+      isConsoleOpen = true;
+      showHistory = false;
+      toast.success("历史记录已加载");
+    } catch (e: any) {
+      toast.error(e.message);
+    }
   }
 
   async function handleRun() {
@@ -214,6 +254,30 @@
         <Download size={16} class="mr-2" />
         {isSaving ? '保存中...' : '保存'}
       </Button>
+      <div class="relative">
+        <Button variant="outline" onclick={() => { showHistory = !showHistory; if (showHistory) fetchHistory(); }} class="bg-white">
+          历史记录
+        </Button>
+        {#if showHistory}
+          <div class="absolute top-full mt-2 left-0 w-64 bg-white border border-slate-200 shadow-xl rounded-lg max-h-64 overflow-y-auto z-50">
+            {#if historyList.length === 0}
+              <div class="p-3 text-sm text-slate-500 text-center">暂无记录</div>
+            {/if}
+            {#each historyList as item}
+              <button 
+                class="w-full text-left p-3 hover:bg-slate-50 border-b border-slate-100 last:border-0"
+                onclick={() => loadTrace(item.workflowId)}
+              >
+                <div class="text-sm font-medium text-slate-700 truncate">{item.requirement}</div>
+                <div class="text-xs text-slate-400 mt-1 flex justify-between">
+                  <span>{new Date(item.timestamp).toLocaleString()}</span>
+                  <span class="text-green-600">{item.status}</span>
+                </div>
+              </button>
+            {/each}
+          </div>
+        {/if}
+      </div>
       <Button onclick={handleRun} disabled={isRunning} class="bg-blue-600 hover:bg-blue-700 text-white shadow-sm min-w-[120px]">
         {#if isRunning}
           <Activity size={16} class="mr-2 animate-pulse" />
