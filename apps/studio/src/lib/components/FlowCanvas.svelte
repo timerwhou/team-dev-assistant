@@ -1,10 +1,15 @@
 <script lang="ts">
-  import { SvelteFlow, Controls, Background, MiniMap, useSvelteFlow } from '@xyflow/svelte';
+  import { SvelteFlow, Controls, Background, MiniMap, useSvelteFlow, type NodeTypes } from '@xyflow/svelte';
   import '@xyflow/svelte/dist/style.css';
   import { LayoutTemplate } from 'lucide-svelte';
 
-  // 接收父级状态
-  let { nodes = $bindable([]), edges = $bindable([]), addLog, onSelectNode } = $props();
+  let { nodes = $bindable([]), edges = $bindable([]), addLog, onSelectNode, nodeTypes }: { 
+    nodes: any[]; 
+    edges: any[]; 
+    addLog: Function; 
+    onSelectNode: Function;
+    nodeTypes: NodeTypes;
+  } = $props();
 
   const flow = useSvelteFlow();
 
@@ -14,14 +19,6 @@
     { stage: 'review', label: 'Review', desc: '审查阶段' }
   ];
 
-  // 🌟 核心修复：强制监听内部 nodes 变化，并同步给外部
-  $effect(() => {
-    // 当内部节点变化时，这里会触发，将引用回传给父级
-    if (nodes) {
-      // 因为双向绑定在这个复杂场景失效，我们通过内部逻辑触发同步
-    }
-  });
-
   function onDrop(event: DragEvent) {
     event.preventDefault();
     const stageId = event.dataTransfer?.getData('application/studio-stage');
@@ -30,7 +27,6 @@
     const stageConfig = STAGES_CONFIG.find(s => s.stage === stageId);
     if (!stageConfig) return;
 
-    // 精准计算坐标
     const position = flow.screenToFlowPosition({
       x: event.clientX,
       y: event.clientY,
@@ -41,11 +37,11 @@
     
     const newNode = {
       id: `node_${Date.now()}`,
+      type: 'status', // 🌟 使用自定义节点类型
       position,
-      data: { label, stage: stageConfig.stage, capabilities: [] }
+      data: { label, stage: stageConfig.stage, capabilities: [], status: undefined }
     };
     
-    // 强制更新外部引用
     nodes = [...nodes, newNode];
     addLog('info', `创建新节点: ${newNode.data.label}`, `节点 ID: ${newNode.id}`, newNode.id);
   }
@@ -55,7 +51,6 @@
     if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
   }
 
-  // DOM 事件委托
   function handleCanvasClick(event: MouseEvent) {
     const target = event.target as HTMLElement;
     const nodeElement = target.closest('.svelte-flow__node');
@@ -84,6 +79,7 @@
   <SvelteFlow 
     bind:nodes 
     bind:edges 
+    {nodeTypes}
     fitView 
     class="bg-slate-50"
   >

@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { SvelteFlowProvider } from '@xyflow/svelte';
-  import { Download, LayoutTemplate, Settings2, X, PanelLeftClose, PanelLeftOpen, Trash2, Info } from 'lucide-svelte';
+  import { SvelteFlowProvider, type NodeTypes } from '@xyflow/svelte';
+  import { Download, LayoutTemplate, Settings2, X, PanelLeftClose, PanelLeftOpen, Trash2, Info, Play, Activity } from 'lucide-svelte';
   import { Button } from '#lib/components/ui/button';
   import { Input } from '#lib/components/ui/input';
   import { Label } from '#lib/components/ui/label';
@@ -8,8 +8,14 @@
   import DebugPanel, { type LogEntry } from '#lib/components/DebugPanel.svelte';
   import CapabilitySelector from '#lib/components/CapabilitySelector.svelte';
   import FlowCanvas from '#lib/components/FlowCanvas.svelte';
+  import StatusNode from '#lib/components/StatusNode.svelte';
 
   const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:3000';
+
+  // 🌟 注册自定义节点类型
+  const nodeTypes: NodeTypes = {
+    status: StatusNode,
+  };
 
   const STAGES_CONFIG = [
     { stage: 'context-gathering', label: 'Context Gathering', desc: '上下文收集', color: 'bg-blue-500' },
@@ -21,6 +27,7 @@
   let edges = $state.raw<any[]>([]);
   let selectedNode = $state<any>(null);
   let isSaving = $state(false);
+  let isRunning = $state(false);
   let isSidebarOpen = $state(true);
   let isConsoleOpen = $state(false);
   let logs = $state<LogEntry[]>([]);
@@ -61,19 +68,77 @@
     if (node) selectedNode = node;
   }
 
-  async function handleSave() {
+  async function handleRun() {
     if (nodes.length === 0) {
-      addLog('warn', '当前画布为空，无法保存');
-      toast.warning('画布为空', { description: '请先拖入至少一个节点' });
+      addLog('warn', '画布为空，无法运行');
+      toast.warning('画布为空', { description: '请先拖入节点' });
       return;
     }
+
+    await handleSave();
+    
+    isRunning = true;
+    addLog('info', '正在触发工作流执行...');
+
+    try {
+      const res = await fetch(`${API_BASE}/api/workflows/execute`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ workflowId: "current-workflow" })
+      });
+
+      if (!res.ok) throw new Error('执行请求失败');
+      const { workflowId } = await res.json();
+      
+      addLog('info', `工作流已启动，ID: ${workflowId}`);
+      toast.success('工作流已启动', { description: '正在实时监听执行状态...' });
+
+      const eventSource = new EventSource(`${API_BASE}/trace/${workflowId}`);
+      
+      eventSource.onmessage = (event) => {
+        const traceEvent = JSON.parse(event.data);
+        addLog('info', `[SSE 收到] ${traceEvent.action}`, traceEvent.detail);
+
+        // 🌟 正确方式：通过修改 data.status 来驱动自定义节点重新渲染
+        nodes = nodes.map((n: any) => {
+          if (n.data.stage === traceEvent.detail) {
+            return { ...n, data: { ...n.data, status: 'running' } };
+          }
+          // 其他节点恢复普通状态
+          return { ...n, data: { ...n.data, status: undefined } };
+        });
+
+        if (traceEvent.action === 'complete') {
+          eventSource.close();
+          isRunning = false;
+          addLog('info', '✅ 工作流执行完成');
+          toast.success('工作流执行完成');
+          
+          // 重置所有节点状态（恢复无高亮）
+          nodes = nodes.map((n: any) => ({ ...n, data: { ...n.data, status: undefined } }));
+        }
+      };
+
+      eventSource.onerror = () => {
+        eventSource.close();
+        isRunning = false;
+        addLog('error', 'SSE 连接中断');
+      };
+      
+    } catch (e: any) {
+      addLog('error', '触发执行失败', e.message);
+      isRunning = false;
+    }
+  }
+
+  async function handleSave() {
+    if (nodes.length === 0) return;
     
     isSaving = true;
-    addLog('info', '开始导出 WorkflowManifest');
+    addLog('info', '正在保存工作流...');
     
     try {
       const stages = nodes.map((n: any) => n.data.stage).filter(Boolean);
-      
       const stageCapabilities: Record<string, string[]> = {};
       for (const stage of Array.from(new Set(stages))) {
         const capsForStage = nodes.filter((n: any) => n.data.stage === stage).flatMap((n: any) => n.data.capabilities || []);
@@ -94,19 +159,12 @@
         body: JSON.stringify(manifest)
       });
 
-      if (!res.ok) {
-        const errBody = await res.json().catch(() => ({}));
-        throw new Error(JSON.stringify(errBody, null, 2));
-      }
-      
+      if (!res.ok) throw new Error('保存请求失败');
       addLog('info', '✅ 工作流保存成功', JSON.stringify(manifest, null, 2));
-      toast.success('工作流导出成功', { description: '已安全写入本地存储' });
-      
+      toast.success('工作流已保存');
     } catch (e: any) {
-      let detail = e.message;
-      if (e.message === 'Failed to fetch') detail = `无法连接到后端 API (${API_BASE})。\n请确认后端已启动。`;
-      addLog('error', '保存工作流失败', detail);
-      toast.error('保存失败', { description: '请检查后端服务或底部控制台' });
+      addLog('error', '保存失败', e.message);
+      toast.error('保存失败');
     } finally {
       isSaving = false;
     }
@@ -118,9 +176,10 @@
 <SvelteFlowProvider>
   <div class="flex w-screen h-screen bg-slate-50 font-sans text-slate-900 overflow-hidden relative">
     
-    <FlowCanvas bind:nodes bind:edges {addLog} onSelectNode={(n) => selectedNode = n} />
+    <!-- 🌟 将 nodeTypes 传递给 FlowCanvas -->
+    <FlowCanvas bind:nodes bind:edges {addLog} {nodeTypes} onSelectNode={(n) => selectedNode = n} />
     
-    <!-- 左侧组件库 -->
+    <!-- 左侧组件库、顶部工具栏、右侧属性面板保持不变 -->
     <aside class="absolute top-0 left-0 h-full w-64 bg-white border-r border-slate-200 shadow-[4px_0_24px_rgba(0,0,0,0.02)] z-20 flex flex-col transition-transform duration-300 ease-in-out" style="transform: translateX({isSidebarOpen ? '0%' : '-100%'})">
       <div class="h-14 flex items-center justify-between px-4 border-b border-slate-100 shrink-0">
         <div class="flex items-center gap-2">
@@ -150,19 +209,22 @@
       </div>
     </div>
 
-    <div class="absolute top-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-3 px-2 py-1.5 bg-white/90 backdrop-blur-md shadow-sm rounded-lg border border-slate-200/60">
-      <Button onclick={handleSave} disabled={isSaving} class="bg-slate-900 hover:bg-slate-800 text-white shadow-sm min-w-[120px]">
-        {#if isSaving}
-          <span class="animate-spin mr-2 border-2 border-white/30 border-t-white rounded-full w-4 h-4"></span>
-          保存中...
+    <div class="absolute top-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 px-2 py-1.5 bg-white/90 backdrop-blur-md shadow-sm rounded-lg border border-slate-200/60">
+      <Button onclick={handleSave} disabled={isSaving || isRunning} variant="outline" class="bg-white hover:bg-slate-50 text-slate-700 shadow-sm">
+        <Download size={16} class="mr-2" />
+        {isSaving ? '保存中...' : '保存'}
+      </Button>
+      <Button onclick={handleRun} disabled={isRunning} class="bg-blue-600 hover:bg-blue-700 text-white shadow-sm min-w-[120px]">
+        {#if isRunning}
+          <Activity size={16} class="mr-2 animate-pulse" />
+          执行中...
         {:else}
-          <Download size={16} class="mr-2" />
-          导出并保存
+          <Play size={16} class="mr-2" />
+          运行工作流
         {/if}
       </Button>
     </div>
 
-    <!-- 右侧属性面板 -->
     <aside class="absolute top-0 right-0 h-full w-80 bg-white border-l border-slate-200 shadow-[-4px_0_24px_rgba(0,0,0,0.02)] z-20 flex flex-col transition-transform duration-300 ease-in-out" style="transform: translateX({selectedNode ? '0%' : '100%'})">
       <div class="h-14 flex items-center justify-between px-4 border-b border-slate-100 shrink-0">
         <div class="flex items-center gap-2">
@@ -186,7 +248,6 @@
               <Info size={14} class="text-slate-500" />
               <span class="text-sm text-slate-600 font-medium">{selectedNode.data.stage}</span>
             </div>
-            <p class="text-[10px] text-slate-400">阶段不可修改，如需修改请重新拖入</p>
           </div>
 
           <div class="pt-4 border-t border-slate-100">
