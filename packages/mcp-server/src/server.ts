@@ -181,6 +181,33 @@ export function startHttpServer(port = parseInt(process.env.MCP_HTTP_PORT || "30
 
     if (handleProtectedResourceMetadata(req, res)) return;
 
+    // 🌟 触发工作流执行 (Mock 演示)
+    if (req.url?.startsWith("/api/workflows/execute") && req.method === "POST") {
+      const workflowId = "wf-" + Date.now();
+      
+      // 返回触发成功
+      res.writeHead(200, { 
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*" 
+      });
+      res.end(JSON.stringify({ workflowId, message: "工作流已开始执行" }));
+
+      // 延迟推送事件，确保前端 SSE 已就绪
+      setTimeout(() => {
+        traceBus.publish(workflowId, { iteration: 1, action: "retrieve", detail: "context-gathering", timestamp: Date.now() });
+      }, 1000);
+
+      setTimeout(() => {
+        traceBus.publish(workflowId, { iteration: 1, action: "execute", detail: "execution", timestamp: Date.now() });
+      }, 2500);
+      
+      setTimeout(() => {
+        traceBus.publish(workflowId, { iteration: 1, action: "complete", detail: "review", timestamp: Date.now() });
+      }, 4000);
+
+      return;
+    }
+
     // 🌟 获取可用能力列表
     if (req.url === "/api/capabilities" && req.method === "GET") {
       // 从注册中心获取所有能力包
@@ -248,6 +275,7 @@ export function startHttpServer(port = parseInt(process.env.MCP_HTTP_PORT || "30
         "Content-Type": "text/event-stream",
         "Cache-Control": "no-cache",
         "Connection": "keep-alive",
+        "Access-Control-Allow-Origin": "*", // 🌟 必须允许跨域，否则前端接收不到
       });
       res.flushHeaders();
 
