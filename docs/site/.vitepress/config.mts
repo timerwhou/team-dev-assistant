@@ -15,19 +15,19 @@ export default defineConfig({
       {
         text: "核心能力",
         items: [
+          { text: "Visual Studio (可视化编排)", link: "/apps/studio" },
           { text: "Team Playbook (架构记忆)", link: "/guide/playbook" },
           { text: "Context Engineering", link: "/context/" },
           { text: "Eval Regression Gate", link: "/eval/" },
-          { text: "HITL & A2A", link: "/a2a/" },
-          { text: "Agent Skills", link: "/skills/" }
+          { text: "HITL & A2A 协同", link: "/a2a/" }
         ]
       },
       {
         text: "开发参考",
         items: [
-          { text: "CLI 命令行", link: "/apps/cli" },
-          { text: "MCP Server (双轨制)", link: "/packages/mcp-server" },
-          { text: "核心包 (Core)", link: "/packages/core" }
+          { text: "CLI 命令行工具", link: "/apps/cli" },
+          { text: "MCP Server 接入", link: "/packages/mcp-server" },
+          { text: "核心包 (Core Engine)", link: "/packages/core" }
         ]
       },
       { text: "安全部署", link: "/deploy/ghcr" },
@@ -43,57 +43,78 @@ export default defineConfig({
 
     sidebar: {
       "/guide/": [
-        {
-          text: "快速入门",
-          items: [
+        { text: "快速入门", items: [
             { text: "快速开始", link: "/guide/getting-started" },
-            { text: "架构设计", link: "/guide/architecture" },
             { text: "3分钟演示", link: "/guide/demo" },
-          ],
-        },
-        {
-          text: "核心特性：架构记忆体",
-          items: [
-            { text: "Team Playbook 指南", link: "/guide/playbook" },
-          ],
-        },
-      ],
-      "/context/": [
-        { text: "Context Engineering", items: [{ text: "总览", link: "/context/" }, { text: "设计文档", link: "/context/design" }] }
-      ],
-      "/eval/": [
-        { text: "Eval Gate", items: [{ text: "质量仪表盘", link: "/eval/" }] }
-      ],
-      "/a2a/": [
-        { text: "A2A 协议", items: [{ text: "双向流与 HITL", link: "/a2a/" }] }
-      ],
-      "/skills/": [
-        { text: "Agent Skills", items: [{ text: "总览", link: "/skills/" }, { text: "Review", link: "/skills/review" }, { text: "Investigate", link: "/skills/investigate" }, { text: "Issues", link: "/skills/issues" }] }
+            { text: "架构设计", link: "/guide/architecture" }
+        ]},
+        { text: "核心概念", items: [
+            { text: "Team Playbook (记忆体)", link: "/guide/playbook" },
+            { text: "Context Engineering", link: "/context/" }
+        ]}
       ],
       "/apps/": [
-        { text: "应用", items: [{ text: "CLI", link: "/apps/cli" }, { text: "Coordinator", link: "/apps/coordinator" }] }
-      ],
-      "/mcp/": [
-        { text: "MCP 集成", items: [{ text: "总览", link: "/mcp/" }, { text: "客户端支持", link: "/mcp/client-compat" }] }
+        { text: "可视化编排", items: [
+            { text: "Studio 画布与画廊", link: "/apps/studio" }
+        ]},
+        { text: "开发者工具", items: [
+            { text: "CLI 命令行", link: "/apps/cli" }
+        ]}
       ],
       "/packages/": [
-        { text: "核心包", items: [{ text: "@tda/core", link: "/packages/core" }, { text: "@tda/tools", link: "/packages/tools" }, { text: "@tda/skills", link: "/packages/skills" }] },
-        { text: "协议", items: [{ text: "@tda/a2a", link: "/packages/a2a" }, { text: "@tda/mcp-server", link: "/packages/mcp-server" }] }
+        { text: "核心引擎", items: [
+            { text: "@tda/core (运行时)", link: "/packages/core" },
+            { text: "@tda/tools (基础工具)", link: "/packages/tools" },
+            { text: "@tda/skills (技能包)", link: "/packages/skills" }
+        ]},
+        { text: "通信与协议", items: [
+            { text: "@tda/mcp-server (接入层)", link: "/packages/mcp-server" },
+            { text: "@tda/a2a (Agent间通信)", link: "/packages/a2a" }
+        ]}
+      ],
+      "/mcp/": [
+        { text: "MCP 接入", items: [
+            { text: "总览", link: "/mcp/" },
+            { text: "客户端支持", link: "/mcp/client-compat" }
+        ]}
       ],
       "/deploy/": [
-        { text: "部署与安全", items: [{ text: "GHCR 镜像与安全运行", link: "/deploy/ghcr" }] }
+        { text: "部署与安全", items: [
+            { text: "GHCR 镜像", link: "/deploy/ghcr" }
+        ]}
       ],
       "/adr/": [
-        {
-          text: "Architecture Decisions",
-          items: [
+        { text: "Architecture Decisions", items: [
             { text: "版本策略解耦", link: "/adr/0006-decouple-versioning-from-milestones" },
             { text: "Eval 回归门禁", link: "/adr/0007-eval-regression-gate" },
             { text: "A2A 双向流与 HITL", link: "/adr/0008-a2a-bidi-hitl" },
-            { text: "Team Playbook 架构", link: "/adr/0009-team-playbook-architecture" },
-          ],
-        },
+            { text: "Team Playbook 架构", link: "/adr/0009-team-playbook-architecture" }
+        ]}
       ],
+      "/skills/": [
+        { text: "Agent Skills", items: [
+            { text: "总览", link: "/skills/" },
+            { text: "Review", link: "/skills/review" },
+            { text: "Investigate", link: "/skills/investigate" },
+            { text: "Issues", link: "/skills/issues" }
+        ]}
+      ],
+      "/a2a/": [
+        { text: "A2A 协议", items: [
+            { text: "双向流与 HITL", link: "/a2a/" }
+        ]}
+      ],
+      "/eval/": [
+        { text: "Eval Gate", items: [
+            { text: "质量仪表盘", link: "/eval/" }
+        ]}
+      ],
+      "/context/": [
+        { text: "Context Engineering", items: [
+            { text: "总览", link: "/context/" },
+            { text: "设计文档", link: "/context/design" }
+        ]}
+      ]
     },
 
     socialLinks: [
