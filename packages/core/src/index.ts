@@ -37,3 +37,6 @@ export * from "./runtime/remote-loader";
 
 // Trace Bus
 export * from "./runtime/trace-bus";
+
+// Memory Store
+export * from "./runtime/memory-store";
