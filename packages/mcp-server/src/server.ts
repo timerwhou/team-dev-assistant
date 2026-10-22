@@ -51,16 +51,19 @@ export function buildServer(ctx: TenantContext, manifest?: WorkflowManifest): Mc
     cacheScope: "public",
   });
 
-  // 2. 动态装配能力包（Capability Registry）
-  const packs = capabilityRegistry.getCapabilities();
+  // 2. 动态装配能力包（支持按 Workflow Manifest 过滤）
+  const packs = manifest 
+    ? WorkflowParser.resolveCapabilities(manifest, manifest.stages[0])
+    : capabilityRegistry.getCapabilities();
+
   for (const pack of packs) {
     server.registerTool(
-      pack.metadata.name, // 🌟 使用向后兼容的 name 暴露给客户端
+      pack.metadata.name,
       {
         description: pack.metadata.description,
         inputSchema: pack.inputSchema.shape,
       },
-      // 🌟 边界防腐层：通过强断言阻断 SDK 的复杂泛型推导，保证 CapabilityPack 的纯净性
+      // 边界防腐层：通过强断言阻断 SDK 的复杂泛型推导，保证 CapabilityPack 的纯净性
       (async (args: any) => {
         const result = await pack.execute(args, {
           tenantId: ctx.tenantId,
@@ -105,37 +108,6 @@ export function startHttpServer(port = parseInt(process.env.MCP_HTTP_PORT || "30
   const useOAuth = !!process.env.OAUTH_ISSUER;
 
   const httpServer = createServer(async (req: IncomingMessage, res: ServerResponse) => {
-    
-    // 🌟 开放的 Trace SSE 端点
-    if (req.url?.startsWith("/trace/")) {
-      const workflowId = req.url.split("/trace/")[1];
-      console.error(`[mcp] 建立 SSE 连接: /trace/${workflowId}`);
-      
-      res.writeHead(200, {
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
-        "Connection": "keep-alive",
-        "Access-Control-Allow-Origin": "*",
-      });
-      res.flushHeaders(); // 强制立刻发送响应头，进入数据流模式
-      
-      const handler = (event: any) => {
-        console.error(`[mcp] SSE 发送事件:`, event);
-        res.write(`data: ${JSON.stringify(event)}\n\n`);
-      };
-      
-      // 注册监听器
-      traceBus.on(`trace:${workflowId}`, handler);
-      
-      // 客户端断开时清理监听器，防止内存泄漏
-      req.on("close", () => {
-        console.error(`[mcp] 断开 SSE 连接: /trace/${workflowId}`);
-        traceBus.off(`trace:${workflowId}`, handler);
-      });
-      
-      return;
-    }
-
     if (req.url === "/health") {
       res.writeHead(200, { "Content-Type": "text/plain" });
       res.end("ok");
@@ -148,6 +120,48 @@ export function startHttpServer(port = parseInt(process.env.MCP_HTTP_PORT || "30
     if (origin && !allowedOrigins.includes(origin) && !origin.startsWith("http://localhost") && !origin.startsWith("http://127.0.0.1")) {
       res.writeHead(403);
       res.end("Forbidden Origin");
+      return;
+    }
+
+    // 🌟 开放的 Trace SSE 端点
+    if (req.url?.startsWith("/trace/")) {
+      const rawId = req.url.split("/trace/")[1];
+      
+      // 🛡️ 安全修复：严格的格式白名单校验，阻断非法注入
+      if (!rawId || !/^[a-zA-Z0-9-]+$/.test(rawId)) {
+        console.error("[mcp] 安全警报：检测到非法的 workflowId 格式，已被拒绝。");
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Invalid workflowId format" }));
+        return;
+      }
+
+      const workflowId = rawId;
+      
+      // 🌟 安全加固：日志中不拼接未净化的用户输入
+      console.error("[mcp] 建立 SSE 连接"); 
+      
+      res.writeHead(200, {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+        "Access-Control-Allow-Origin": "*",
+      });
+      res.flushHeaders();
+
+      const handler = (event: any) => {
+        // 🌟 安全加固：事件内容由系统生成，但日志中仅打印静态提示
+        console.error("[mcp] SSE 发送事件");
+        res.write(`data: ${JSON.stringify(event)}\n\n`);
+      };
+      
+      traceBus.on(`trace:${workflowId}`, handler);
+      
+      req.on("close", () => {
+        // 🌟 安全加固：日志中不拼接未净化的用户输入
+        console.error("[mcp] 断开 SSE 连接");
+        traceBus.off(`trace:${workflowId}`, handler);
+      });
+      
       return;
     }
 
