@@ -12,6 +12,7 @@ import { resolveTenantContext, TenantContext } from "./tenant";
 import { registerCodeReviewPrompt } from "./prompts/code-review";
 import { registerProjectFilesResource } from "./resources/project-files";
 import { registerReadFile } from "./tools/read-file";
+import { WorkflowStore } from "./workflow-store"; // 🌟 引入存储
 
 if (process.env.OTEL_ENABLED === "true") {
   init({ serviceName: "team-dev-assistant-mcp" });
@@ -39,7 +40,6 @@ export function buildServer(ctx: TenantContext, manifest?: WorkflowManifest): Mc
   const skillsRoot = path.resolve(ctx.rootDir, "packages/skills/skills");
   const skillMap = discoverSkills(skillsRoot);
 
-  // 1. 注册原有的强依赖/资源类工具
   registerReadFile(server, ctx.rootDir);
   registerCodeReviewPrompt(server);
   registerProjectFilesResource(server, ctx.rootDir);
@@ -51,7 +51,6 @@ export function buildServer(ctx: TenantContext, manifest?: WorkflowManifest): Mc
     cacheScope: "public",
   });
 
-  // 2. 动态装配能力包（支持按 Workflow Manifest 过滤）
   const packs = manifest 
     ? WorkflowParser.resolveCapabilities(manifest, manifest.stages[0])
     : capabilityRegistry.getCapabilities();
@@ -63,7 +62,6 @@ export function buildServer(ctx: TenantContext, manifest?: WorkflowManifest): Mc
         description: pack.metadata.description,
         inputSchema: pack.inputSchema.shape,
       },
-      // 边界防腐层：通过强断言阻断 SDK 的复杂泛型推导，保证 CapabilityPack 的纯净性
       (async (args: any) => {
         const result = await pack.execute(args, {
           tenantId: ctx.tenantId,
@@ -123,11 +121,46 @@ export function startHttpServer(port = parseInt(process.env.MCP_HTTP_PORT || "30
       return;
     }
 
+    // 🌟 API 路由：Workflow 编排 (简易多租户路由)
+    if (req.url?.startsWith("/api/workflows")) {
+      // 用默认租户作为示例（实际生产需从 Header 或 Token 提取）
+      const tenantCtx = resolveTenantContext("default-tenant");
+      const store = new WorkflowStore(tenantCtx.rootDir);
+
+      if (req.url === "/api/workflows" && req.method === "GET") {
+        const list = store.list();
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(list));
+        return;
+      }
+
+      if (req.url === "/api/workflows" && req.method === "POST") {
+        let body = "";
+        req.on("data", chunk => { body += chunk.toString(); });
+        req.on("end", () => {
+          try {
+            const rawData = JSON.parse(body);
+            const result = store.validateAndSave(rawData);
+            if (result.success) {
+              res.writeHead(200, { "Content-Type": "application/json" });
+              res.end(JSON.stringify({ success: true }));
+            } else {
+              res.writeHead(400, { "Content-Type": "application/json" });
+              res.end(JSON.stringify({ error: result.error }));
+            }
+          } catch (e) {
+            res.writeHead(400, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: "Invalid JSON payload" }));
+          }
+        });
+        return;
+      }
+    }
+
     // 🌟 开放的 Trace SSE 端点
     if (req.url?.startsWith("/trace/")) {
       const rawId = req.url.split("/trace/")[1];
       
-      // 🛡️ 安全修复：严格的格式白名单校验，阻断非法注入
       if (!rawId || !/^[a-zA-Z0-9-]+$/.test(rawId)) {
         console.error("[mcp] 安全警报：检测到非法的 workflowId 格式，已被拒绝。");
         res.writeHead(400, { "Content-Type": "application/json" });
@@ -137,7 +170,6 @@ export function startHttpServer(port = parseInt(process.env.MCP_HTTP_PORT || "30
 
       const workflowId = rawId;
       
-      // 🌟 安全加固：日志中不拼接未净化的用户输入
       console.error("[mcp] 建立 SSE 连接"); 
       
       res.writeHead(200, {
@@ -149,7 +181,6 @@ export function startHttpServer(port = parseInt(process.env.MCP_HTTP_PORT || "30
       res.flushHeaders();
 
       const handler = (event: any) => {
-        // 🌟 安全加固：事件内容由系统生成，但日志中仅打印静态提示
         console.error("[mcp] SSE 发送事件");
         res.write(`data: ${JSON.stringify(event)}\n\n`);
       };
@@ -157,7 +188,6 @@ export function startHttpServer(port = parseInt(process.env.MCP_HTTP_PORT || "30
       traceBus.on(`trace:${workflowId}`, handler);
       
       req.on("close", () => {
-        // 🌟 安全加固：日志中不拼接未净化的用户输入
         console.error("[mcp] 断开 SSE 连接");
         traceBus.off(`trace:${workflowId}`, handler);
       });
