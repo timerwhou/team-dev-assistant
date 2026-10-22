@@ -14,17 +14,28 @@ export class WorkflowStore {
   }
 
   /** 
-   * 🛡️ 安全防御：严格校验 ID 格式，阻断路径穿越 (Path Traversal)
-   * 我们的 ID 均由 randomUUID() 生成，只允许 36 位标准 UUID 字符
+   * 🛡️ 安全防御：彻底物理隔离。
+   * 如果 ID 不是标准 UUID，直接返回 null，绝不拼接到 path 中。
+   * 增加 JSON.stringify 阻断 Log Injection。
    */
   private getFilePath(id: string): string | null {
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(id)) {
-      console.error(`[Security] 拦截非法 ID 访问: ${id}`);
+    // 1. 严格匹配 UUID，不匹配直接拒绝
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    
+    if (!isUuid) {
+      // 使用 JSON.stringify 处理日志，防止换行符注入
+      console.error(`[Security] 拦截非法 ID 访问: ${JSON.stringify(id)}`);
       return null;
     }
-    // 此时 id 已被正则严格约束，绝对不可能包含 ../ 或特殊字符
-    return path.join(this.dir, `${id}.json`);
+
+    // 2. 再次进行边界校验，确保拼接后的路径在根目录之下
+    const resolvedPath = path.resolve(this.dir, `${id}.json`);
+    if (!resolvedPath.startsWith(path.resolve(this.dir) + path.sep)) {
+      console.error("[Security] 检测到路径越界攻击");
+      return null;
+    }
+
+    return resolvedPath;
   }
 
   public listAssets(): WorkflowAsset[] {
@@ -37,7 +48,7 @@ export class WorkflowStore {
 
   public getAsset(id: string): WorkflowAsset | null {
     const filePath = this.getFilePath(id);
-    if (!filePath) return null; // 非法 ID 直接返回 null
+    if (!filePath) return null;
     if (!fs.existsSync(filePath)) return null;
     return JSON.parse(fs.readFileSync(filePath, "utf-8")) as WorkflowAsset;
   }
@@ -79,7 +90,7 @@ export class WorkflowStore {
 
   public deleteAsset(id: string): boolean {
     const filePath = this.getFilePath(id);
-    if (!filePath) return false; // 非法 ID 直接返回 false
+    if (!filePath) return false;
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
       return true;
