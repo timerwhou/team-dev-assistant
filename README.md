@@ -64,3 +64,11 @@ docker run -d --rm \
 
 ## 📄 License
 [MIT](LICENSE)
+
+## 🎨 可视化编排 Studio (v1.9.0 新增)
+
+从 v1.9.0 开始，引擎内置了可视化 Studio。无需额外部署前端，直接启动 MCP Server 后访问 `http://localhost:3000/studio` 即可体验。
+
+- 支持从左侧组件库拖拽编排。
+- 支持配置节点绑定的能力。
+- 可视化生成并保存 WorkflowManifest。

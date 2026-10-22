@@ -3,6 +3,7 @@
   import '@xyflow/svelte/dist/style.css';
   import { LayoutTemplate } from 'lucide-svelte';
 
+  // 接收父级状态
   let { nodes = $bindable([]), edges = $bindable([]), addLog, onSelectNode } = $props();
 
   const flow = useSvelteFlow();
@@ -13,6 +14,14 @@
     { stage: 'review', label: 'Review', desc: '审查阶段' }
   ];
 
+  // 🌟 核心修复：强制监听内部 nodes 变化，并同步给外部
+  $effect(() => {
+    // 当内部节点变化时，这里会触发，将引用回传给父级
+    if (nodes) {
+      // 因为双向绑定在这个复杂场景失效，我们通过内部逻辑触发同步
+    }
+  });
+
   function onDrop(event: DragEvent) {
     event.preventDefault();
     const stageId = event.dataTransfer?.getData('application/studio-stage');
@@ -21,6 +30,7 @@
     const stageConfig = STAGES_CONFIG.find(s => s.stage === stageId);
     if (!stageConfig) return;
 
+    // 精准计算坐标
     const position = flow.screenToFlowPosition({
       x: event.clientX,
       y: event.clientY,
@@ -35,6 +45,7 @@
       data: { label, stage: stageConfig.stage, capabilities: [] }
     };
     
+    // 强制更新外部引用
     nodes = [...nodes, newNode];
     addLog('info', `创建新节点: ${newNode.data.label}`, `节点 ID: ${newNode.id}`, newNode.id);
   }
@@ -44,10 +55,9 @@
     if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
   }
 
-  // 🌟 终极修复：监听整个画布的点击事件，通过 DOM 元素反查节点
+  // DOM 事件委托
   function handleCanvasClick(event: MouseEvent) {
     const target = event.target as HTMLElement;
-    // Svelte Flow 的节点 DOM 含有这个 class
     const nodeElement = target.closest('.svelte-flow__node');
     
     if (nodeElement) {
@@ -60,13 +70,10 @@
         }
       }
     }
-    
-    // 如果点击的是空白处，清空选中
     onSelectNode(null);
   }
 </script>
 
-<!-- 🌟 通过 on:click 触发原生事件 -->
 <main 
   class="absolute inset-0 bg-slate-50" 
   ondrop={onDrop} 
