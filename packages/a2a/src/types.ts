@@ -58,6 +58,12 @@ export type ElicitRequest = {
   taskId: string;
   elicitId: string;
   question: string;
+  proposedAction?: string;
+  proposedFact?: {
+    title: string;
+    content: string;
+    domain: string;
+  };
   inputSchema: Record<string, unknown>;
   expiresAt: string;
 };
@@ -76,18 +82,17 @@ export type Task = {
   artifacts: Artifact[];
   createdAt: string;
   updatedAt: string;
-  /** Elicitation 期间的状态 */
   requestState?: RequestState;
-  /** 当前等待的 Elicitation 请求 */
   pendingElicit?: ElicitRequest;
 };
 
-/** WebSocket 帧（JSON-RPC 2.0） */
+// ===== WebSocket JSON-RPC 通信类型 =====
+
 export type WsRequest = {
   jsonrpc: "2.0";
   id: string;
   method: string;
-  params?: unknown;
+  params: unknown;
 };
 
 export type WsResponse = {

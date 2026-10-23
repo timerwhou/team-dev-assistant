@@ -70,6 +70,8 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Build a2a types
+        run: pnpm --filter @tda/a2a build
       - run: pnpm -r --no-bail typecheck
 
   # ---------- Unit Tests ----------
@@ -89,6 +91,8 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Build a2a types
+        run: pnpm --filter @tda/a2a build
       - run: sudo apt-get update && sudo apt-get install -y ripgrep
       - run: pnpm -r --no-bail --if-present test
       - run: pnpm --filter @tda/cli dev -- /help
@@ -143,6 +147,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Install ripgrep
         run: sudo apt-get update && sudo apt-get install -y ripgrep
+      - name: Build A2A Package
+        run: pnpm --filter @tda/a2a build
       - name: Build MCP Server
         run: pnpm --filter @tda/mcp-server build
       - name: Run MCP Probe

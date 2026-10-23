@@ -306,6 +306,9 @@ importers:
       '@olaservo/ext-skills':
         specifier: ^0.16.0
         version: 0.16.0(@modelcontextprotocol/server@2.3.1)
+      '@tda/a2a':
+        specifier: workspace:*
+        version: link:../a2a
       '@tda/core':
         specifier: workspace:*
         version: link:../core

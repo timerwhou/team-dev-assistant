@@ -1,197 +1,131 @@
-import express from "express";
-import { createServer, type Server as HttpServer } from "node:http";
-import { WebSocketServer, type WebSocket } from "ws";
+import { createServer, IncomingMessage, ServerResponse } from "node:http";
 import { randomUUID } from "node:crypto";
-import type {
-  AgentCard,
-  Task,
-  Message,
-  Artifact,
-  WsRequest,
-  WsResponse,
-  RequestState,
-} from "./types";
-import { ElicitationRequired } from "./types";
+import type { AgentCard, Message, Task, Artifact, RequestState } from "./types.js";
+import { ElicitationRequired } from "./types.js";
 
-export type A2AHandler = (messages: Message[]) => Promise<Artifact[]>;
+type Handler = (messages: Message[], task?: Task) => Promise<Artifact[]>;
 
-export type A2AServer = {
-  app: express.Express;
-  server: HttpServer;
-  listen: (port: number, callback?: () => void) => HttpServer;
-};
-
-export function createA2AServer(card: AgentCard, handler: A2AHandler): A2AServer {
-  const app = express();
-  app.use(express.json({ limit: "5mb" }));
+export function createA2AServer(card: AgentCard, handler: Handler) {
   const tasks = new Map<string, Task>();
 
-  app.get("/.well-known/agent.json", (_req, res) => res.json(card));
-
-  // ---------- HTTP JSON-RPC 端点（兼容 1.0） ----------
-  app.post("/", async (req, res) => {
-    const { jsonrpc, id, method, params } = req.body;
-    const reply = (result: unknown, error?: { code: number; message: string }) =>
-      res.json(error ? { jsonrpc: "2.0", id, error } : { jsonrpc: "2.0", id, result });
-
+  async function processTask(task: Task, messages: Message[]) {
     try {
-      if (method === "tasks/send") {
-        const { id: taskId = randomUUID(), message } = params as { id?: string; message: Message };
-        const task = createTask(taskId, message);
-        tasks.set(taskId, task);
-        runTask(task, handler);
-        return reply(task);
-      }
-      if (method === "tasks/get") {
-        const { id: taskId } = params as { id: string };
-        const task = tasks.get(taskId);
-        if (!task) return reply(null, { code: -32001, message: "Task not found" });
-        return reply(task);
-      }
-      if (method === "tasks/resume") {
-        const { requestState, inputResponses } = params as {
-          requestState: RequestState;
-          inputResponses: Record<string, unknown>;
-        };
-        const task = tasks.get(requestState.taskId);
-        if (!task) return reply(null, { code: -32001, message: "Task not found" });
-        if (task.status !== "input-required") {
-          return reply(null, { code: -32002, message: `Task 状态不是 input-required（当前：${task.status}）` });
-        }
-        task.status = "working";
-        task.pendingElicit = undefined;
-        task.requestState = undefined;
-        task.updatedAt = new Date().toISOString();
-        task.messages.push({
-          role: "user",
-          parts: [{ type: "text", text: JSON.stringify(inputResponses) }],
-          messageId: randomUUID(),
-        });
-        runTask(task, handler);
-        return reply(task);
-      }
-      return reply(null, { code: -32601, message: `Method not found: ${method}` });
-    } catch (e: any) {
-      return reply(null, { code: -32603, message: e.message });
-    }
-  });
-
-  // ---------- WebSocket 端点（1.1 BiDi） ----------
-  const server = createServer(app);
-  const wss = new WebSocketServer({ server, path: "/stream" });
-
-  wss.on("connection", (ws: WebSocket) => {
-    console.error("[ws] client connected");
-
-    ws.on("message", async (data: string) => {
-      let req: WsRequest;
-      try {
-        req = JSON.parse(data.toString());
-      } catch {
-        ws.send(JSON.stringify({ jsonrpc: "2.0", id: "", error: { code: -32700, message: "Parse error" } }));
-        return;
-      }
-
-      const reply = (result: unknown, error?: { code: number; message: string }) => {
-        const res: WsResponse = error
-          ? { jsonrpc: "2.0", id: req.id, error }
-          : { jsonrpc: "2.0", id: req.id, result };
-        ws.send(JSON.stringify(res));
-      };
-
-      try {
-        if (req.method === "tasks/send") {
-          const { id: taskId = randomUUID(), message } = req.params as { id?: string; message: Message };
-          const task = createTask(taskId, message);
-          tasks.set(taskId, task);
-          runTask(task, handler);
-          return reply(task);
-        }
-        if (req.method === "tasks/get") {
-          const { id: taskId } = req.params as { id: string };
-          const task = tasks.get(taskId);
-          if (!task) return reply(null, { code: -32001, message: "Task not found" });
-          return reply(task);
-        }
-        if (req.method === "tasks/resume") {
-          const { requestState, inputResponses } = req.params as {
-            requestState: RequestState;
-            inputResponses: Record<string, unknown>;
-          };
-          const task = tasks.get(requestState.taskId);
-          if (!task) return reply(null, { code: -32001, message: "Task not found" });
-          if (task.status !== "input-required") {
-            return reply(null, { code: -32002, message: `Task 状态不是 input-required（当前：${task.status}）` });
-          }
-          task.status = "working";
-          task.pendingElicit = undefined;
-          task.requestState = undefined;
-          task.updatedAt = new Date().toISOString();
-          task.messages.push({
-            role: "user",
-            parts: [{ type: "text", text: JSON.stringify(inputResponses) }],
-            messageId: randomUUID(),
-          });
-          runTask(task, handler);
-          return reply(task);
-        }
-        return reply(null, { code: -32601, message: `Method not found: ${req.method}` });
-      } catch (e: any) {
-        return reply(null, { code: -32603, message: e.message });
-      }
-    });
-
-    ws.on("close", () => {
-      console.error("[ws] client disconnected");
-    });
-  });
-
-  return {
-    app,
-    server,
-    listen: (port, cb) => server.listen(port, cb),
-  };
-}
-
-function createTask(id: string, message: Message): Task {
-  return {
-    id,
-    status: "working",
-    messages: [message],
-    artifacts: [],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    requestState: undefined,
-    pendingElicit: undefined,
-  };
-}
-
-function runTask(task: Task, handler: A2AHandler) {
-  handler(task.messages)
-    .then((artifacts) => {
+      task.status = "working";
+      task.updatedAt = new Date().toISOString();
+      const artifacts = await handler(messages, task);
       task.artifacts = artifacts;
       task.status = "completed";
+      task.messages = messages;
       task.updatedAt = new Date().toISOString();
-    })
-    .catch((e) => {
+    } catch (e) {
       if (e instanceof ElicitationRequired) {
         task.status = "input-required";
-        task.pendingElicit = e.elicit;
-        task.requestState = {
-          taskId: task.id,
-          elicitId: e.elicit.elicitId,
-          inputSchema: e.elicit.inputSchema,
-          expiresAt: e.elicit.expiresAt,
-        };
+        // 🌟 强制注入真实的 taskId，防止子 Agent 传空字符串导致状态机崩溃
+        task.pendingElicit = { ...(e as ElicitationRequired).elicit, taskId: task.id };
         task.updatedAt = new Date().toISOString();
+      } else {
+        task.status = "failed";
+        task.updatedAt = new Date().toISOString();
+        console.error("Task failed:", e);
+      }
+    }
+  }
+
+  function parseBody(req: IncomingMessage): Promise<string> {
+    return new Promise((resolve) => {
+      let body = "";
+      req.on("data", (chunk) => (body += chunk.toString()));
+      req.on("end", () => resolve(body));
+    });
+  }
+
+  const server = createServer(async (req: IncomingMessage, res: ServerResponse) => {
+    res.setHeader("Content-Type", "application/json");
+
+    // GET /agent.json
+    if (req.url === "/.well-known/agent.json" && req.method === "GET") {
+      res.writeHead(200);
+      res.end(JSON.stringify(card));
+      return;
+    }
+
+    // POST /
+    if (req.url === "/" && req.method === "POST") {
+      const body = await parseBody(req);
+      const payload = JSON.parse(body);
+
+      // 创建新任务
+      if (payload.method === "tasks/send") {
+        const taskId = randomUUID();
+        const task: Task = {
+          id: taskId,
+          status: "submitted",
+          messages: [],
+          artifacts: [],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        tasks.set(taskId, task);
+        
+        // 异步处理
+        processTask(task, payload.params.messages);
+
+        res.writeHead(200);
+        res.end(JSON.stringify({ id: 1, result: { id: taskId, status: "submitted" } }));
         return;
       }
-      task.status = "failed";
-      task.messages.push({
-        role: "agent",
-        parts: [{ type: "text", text: `失败：${e.message}` }],
-        messageId: randomUUID(),
-      });
-      task.updatedAt = new Date().toISOString();
-    });
+
+      // 恢复任务
+      if (payload.method === "tasks/resume") {
+        const { taskId, inputResponses } = payload.params;
+        const task = tasks.get(taskId);
+        if (!task) {
+          res.writeHead(404);
+          res.end(JSON.stringify({ error: "Task not found" }));
+          return;
+        }
+
+        if (task.status !== "input-required") {
+          res.writeHead(400);
+          res.end(JSON.stringify({ error: `Task 状态不是 input-required（当前：${task.status}）` }));
+          return;
+        }
+
+        // 清空挂起状态，将人类输入拼接到消息中
+        task.pendingElicit = undefined;
+        task.requestState = undefined;
+        task.status = "working";
+        task.messages.push({
+          role: "user",
+          messageId: randomUUID(),
+          parts: [{ type: "data", data: inputResponses }],
+        });
+
+        processTask(task, task.messages);
+
+        res.writeHead(200);
+        res.end(JSON.stringify({ id: 1, result: { id: taskId, status: "working" } }));
+        return;
+      }
+    }
+
+    // GET /tasks/:id
+    if (req.url?.startsWith("/tasks/") && req.method === "GET") {
+      const taskId = req.url.split("/tasks/")[1];
+      const task = tasks.get(taskId);
+      if (!task) {
+        res.writeHead(404);
+        res.end(JSON.stringify({ error: "Task not found" }));
+        return;
+      }
+      res.writeHead(200);
+      res.end(JSON.stringify(task));
+      return;
+    }
+
+    res.writeHead(404);
+    res.end(JSON.stringify({ error: "Not Found" }));
+  });
+
+  return { server, listen: (port: number, cb?: () => void) => server.listen(port, cb) };
 }

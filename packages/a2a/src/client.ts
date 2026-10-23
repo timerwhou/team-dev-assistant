@@ -1,5 +1,5 @@
 import WebSocket from "ws";
-import type { AgentCard, Task, Message, WsRequest, WsResponse, RequestState } from "./types";
+import type { AgentCard, Task, Message, WsRequest, WsResponse, RequestState } from "./types.js";
 
 type JsonRpcResponse<T> = {
   jsonrpc: "2.0";
