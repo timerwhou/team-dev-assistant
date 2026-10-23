@@ -4,7 +4,7 @@ import { agentRegistry } from "@tda/core";
 import "@tda/core/lib/env";
 import { A2AClient } from "@tda/a2a";
 import type { Task } from "@tda/a2a";
-import { a2aBus } from "./bus";
+import { a2aBus } from "@tda/core";
 
 const REVIEWER_URL = process.env.REVIEWER_URL || "http://localhost:4101";
 const INVESTIGATOR_URL = process.env.INVESTIGATOR_URL || "http://localhost:4102";
