@@ -1,10 +1,14 @@
 import { EventEmitter } from "node:events";
-import type { Task } from "@tda/a2a";
 
 export interface A2AEvent {
   type: "task-updated" | "workflow-completed" | "workflow-failed";
   workflowId: string;
-  task?: Task;
+  // 🌟 使用轻量的结构化类型，不依赖 @tda/a2a 的具体实现
+  task?: {
+    id: string;
+    status: string;
+    [key: string]: unknown;
+  };
   message?: string;
 }
 
