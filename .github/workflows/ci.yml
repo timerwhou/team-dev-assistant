@@ -38,7 +38,7 @@ jobs:
   # ---------- PR 规范校验 (DoD 门禁) ----------
   check-pr-template:
     name: Check PR Template
-    if: github.event_name == 'pull_request' && !startsWith(github.head_ref, 'release-please--branches--main')
+    if: github.event_name == 'pull_request' && !startsWith(github.head_ref, 'release-please--branches--main') && !startsWith(github.head_ref, 'dependabot/')
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
