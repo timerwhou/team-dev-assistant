@@ -1,5 +1,5 @@
 # 生产环境建议使用 LTS 版本，如 node:22-slim
-FROM node:22-slim
+FROM node:25-slim
 
 # 增加 OCI 元数据标签 (GHCR 会自动识别并关联到 GitHub 仓库)
 LABEL org.opencontainers.image.title="Team Dev Assistant"
