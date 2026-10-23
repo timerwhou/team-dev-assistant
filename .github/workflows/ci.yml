@@ -70,6 +70,8 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Build a2a types
+        run: pnpm --filter @tda/a2a build
       - run: pnpm -r --no-bail typecheck
 
   # ---------- Unit Tests ----------
