@@ -143,6 +143,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Install ripgrep
         run: sudo apt-get update && sudo apt-get install -y ripgrep
+      - name: Build A2A Package
+        run: pnpm --filter @tda/a2a build
       - name: Build MCP Server
         run: pnpm --filter @tda/mcp-server build
       - name: Run MCP Probe

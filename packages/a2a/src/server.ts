@@ -1,7 +1,7 @@
 import { createServer, IncomingMessage, ServerResponse } from "node:http";
 import { randomUUID } from "node:crypto";
-import type { AgentCard, Message, Task, Artifact, RequestState } from "./types";
-import { ElicitationRequired } from "./types";
+import type { AgentCard, Message, Task, Artifact, RequestState } from "./types.js";
+import { ElicitationRequired } from "./types.js";
 
 type Handler = (messages: Message[], task?: Task) => Promise<Artifact[]>;
 
@@ -21,7 +21,7 @@ export function createA2AServer(card: AgentCard, handler: Handler) {
       if (e instanceof ElicitationRequired) {
         task.status = "input-required";
         // 🌟 强制注入真实的 taskId，防止子 Agent 传空字符串导致状态机崩溃
-        task.pendingElicit = { ...e.elicit, taskId: task.id };
+        task.pendingElicit = { ...(e as ElicitationRequired).elicit, taskId: task.id };
         task.updatedAt = new Date().toISOString();
       } else {
         task.status = "failed";
