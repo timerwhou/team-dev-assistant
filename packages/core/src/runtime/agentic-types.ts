@@ -1,9 +1,17 @@
-import type { CapabilityPack } from "./types";
-
 export interface AgenticTraceEvent {
   iteration: number;
   action: "retrieve" | "execute" | "complete" | "abort";
   detail: string;
+  timestamp: number;
+}
+
+export interface LlmCallRecord {
+  callId: string;
+  prompt: string;
+  response: string;
+  model?: string;
+  tokenUsage?: { input: number; output: number };
+  durationMs: number;
   timestamp: number;
 }
 
@@ -13,11 +21,8 @@ export interface AgenticContext {
   iteration: number;
   maxIterations: number;
   trace: AgenticTraceEvent[];
-  /** 积累的上下文（背景包或工具返回结果） */
   accumulatedContext: string[];
-  /** 是否已满足完成条件 */
   isComplete: boolean;
-  /** 中断信号 */
   isAborted: boolean;
 }
 
