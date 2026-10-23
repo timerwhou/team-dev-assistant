@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.13.0](https://github.com/timerwhou/team-dev-assistant/compare/v1.12.0...v1.13.0) (2026-10-23)
+
+
+### Features
+
+* **docker:** 重构为多 Agent 生产级部署方案 ([1bf8681](https://github.com/timerwhou/team-dev-assistant/commit/1bf8681ae36539a46bda7b4456b2a72cbcea9ff9))
+
 ## [1.12.0](https://github.com/timerwhou/team-dev-assistant/compare/v1.11.0...v1.12.0) (2026-10-23)
 
 
