@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.13.1](https://github.com/timerwhou/team-dev-assistant/compare/v1.13.0...v1.13.1) (2026-10-23)
+
+
+### Bug Fixes
+
+* **ci:** 修正 Docker Build Check 的 Dockerfile 路径为根目录 ([5331db1](https://github.com/timerwhou/team-dev-assistant/commit/5331db16bf7f79d4ac086e7eb9d09c7aa92bd702))
+* **ci:** 修正 publish.yml 的 Dockerfile 路径为根目录 ([054ab15](https://github.com/timerwhou/team-dev-assistant/commit/054ab158e9855102102ddbd17b96197adb75ccf1))
+
 ## [1.13.0](https://github.com/timerwhou/team-dev-assistant/compare/v1.12.0...v1.13.0) (2026-10-23)
 
 
