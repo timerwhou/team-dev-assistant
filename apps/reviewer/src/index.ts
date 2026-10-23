@@ -1,6 +1,6 @@
 import "@tda/core/lib/env";
 import { createA2AServer, ElicitationRequired } from "@tda/a2a";
-import type { Artifact, Message, AgentCard } from "@tda/a2a";
+import type { Artifact, Message, AgentCard, Task } from "@tda/a2a";
 import { runAgent } from "@tda/core";
 import { executeToolCalls, openAITools } from "@tda/tools";
 
@@ -24,33 +24,44 @@ const card: AgentCard = {
   skills: [{ id: "code_review", name: "代码评审", description: "评审代码", tags: ["review"] }],
 };
 
-async function handler(messages: Message[]): Promise<Artifact[]> {
+// 🌟 重构后的 handler：接收完整的 Task 对象，用于判断是否恢复
+async function handler(messages: Message[], task?: Task): Promise<Artifact[]> {
   const text = messages
     .flatMap((m) => m.parts)
     .filter((p): p is { type: "text"; text: string } => p.type === "text")
     .map((p) => p.text)
     .join("\n");
 
-  // 如果包含 [elicit] 且只有这一条消息，说明是第一次触发，抛出 Elicitation
-  const hasElicit = text.includes("[elicit]");
-  const isResumed = text.includes("confirm");
+  const targetText = text.replace(/review:/g, "").trim() || "src/index.ts";
 
-  if (hasElicit && !isResumed) {
-    throw new ElicitationRequired({
-      taskId: "", 
-      elicitId: "demo-elicit-1",
-      question: "你确定要让我评审这个文件吗？（输入 confirm 确认）",
-      inputSchema: {
-        type: "object",
-        properties: { confirm: { type: "boolean" } },
-        required: ["confirm"],
-      },
-      expiresAt: new Date(Date.now() + 60000).toISOString(),
-    });
+  // 如果 Task 没有 requestState/pendingElicit，说明是第一次触发，抛出 Elicitation
+  if (!task?.pendingElicit && !task?.requestState) {
+    // 但注意：如果是通过 resumeTask 恢复，task.status 已经被置为 working
+    // 所以我们应该在原始消息里找是否有 confirm 的 data
+    const hasConfirm = messages.some(m => 
+      m.parts.some(p => p.type === "data" && (p.data as any).confirm === true)
+    );
+    
+    if (!hasConfirm) {
+      throw new ElicitationRequired({
+        taskId: task?.id || "",
+        elicitId: `elicit-${Date.now()}`,
+        question: `你确定要让我评审文件 ${targetText} 吗？`,
+        proposedAction: `执行代码评审: ${targetText}`,
+        proposedFact: {
+          title: `已评审文件: ${targetText}`,
+          content: `Reviewer 对该文件进行了静态分析并输出了评审报告。`,
+          domain: "code-review"
+        },
+        inputSchema: {
+          type: "object",
+          properties: { confirm: { type: "boolean" } },
+          required: ["confirm"],
+        },
+        expiresAt: new Date(Date.now() + 60000).toISOString(),
+      });
+    }
   }
-
-  // 如果是恢复后的执行，提取原始的文件名（去掉 [elicit] 前缀）
-  const targetText = text.replace(/\[elicit\]/g, "").replace(/\{.*\}/g, "").trim() || "src/index.ts";
 
   const allowedTools = openAITools.filter(
     (t) => t.type === "function" && ["read_file", "search_code"].includes(t.function.name)

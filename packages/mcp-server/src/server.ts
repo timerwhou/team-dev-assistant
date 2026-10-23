@@ -1,3 +1,4 @@
+import { A2AClient } from "@tda/a2a";
 import { toNodeHandler } from "@modelcontextprotocol/node";
 import { createMcpHandler, McpServer, McpServerFactory } from "@modelcontextprotocol/server";
 import { init } from "@telemetry-dev/sdk";
@@ -14,6 +15,7 @@ import { registerCodeReviewPrompt } from "./prompts/code-review";
 import { registerProjectFilesResource } from "./resources/project-files";
 import { registerReadFile } from "./tools/read-file";
 import { WorkflowStore } from "./workflow-store";
+import { handleWebhook } from "./api/webhook-handler";
 import { MemoryStore } from "@tda/core";
 import { handleWebhook } from "./api/webhook-handler";
 
@@ -111,6 +113,9 @@ export function startHttpServer(port = parseInt(process.env.MCP_HTTP_PORT || "30
   const useOAuth = !!process.env.OAUTH_ISSUER;
 
   const httpServer = createServer(async (req: IncomingMessage, res: ServerResponse) => {
+    // 🌟 Webhook 拦截（必须在所有业务路由之前）
+    if (await handleWebhook(req, res)) return;
+
     // 🌟 全局 CORS 头部处理
     const origin = req.headers.origin;
     if (origin && allowedOrigins.includes(origin)) {
@@ -176,6 +181,25 @@ export function startHttpServer(port = parseInt(process.env.MCP_HTTP_PORT || "30
           }
         }
       }
+    }
+
+    // 🌟 A2A HITL 审批接口
+    if (req.url === "/api/a2a/approve" && req.method === "POST") {
+      let body = "";
+      req.on("data", chunk => { body += chunk.toString(); });
+      req.on("end", async () => {
+        try {
+          const { agentUrl, taskId, requestState, confirm } = JSON.parse(body);
+          const client = new A2AClient(agentUrl);
+          await client.resumeTask(requestState, { confirm });
+          res.writeHead(200, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" });
+          res.end(JSON.stringify({ success: true }));
+        } catch (e: any) {
+          res.writeHead(500, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: e.message }));
+        }
+      });
+      return;
     }
 
     if (req.url === "/health") {
