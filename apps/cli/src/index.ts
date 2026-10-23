@@ -4,7 +4,6 @@ import { recorder, createJsonlReporter, createConsoleReporter } from "@tda/core"
 import { executeToolCalls, openAITools, toolsByName } from "@tda/tools";
 import { skillsByName, listSkills } from "@tda/skills";
 import fs from "node:fs";
-import crypto from "node:crypto";
 import path from "node:path";
 import { ConflictService } from "./services/conflict";
 import { TodoService } from "./services/todo";
@@ -12,6 +11,7 @@ import { GitHubSyncProvider } from "./services/todo-sync";
 import { PlanService } from "./services/plan";
 import type { PlanOutput } from "./services/plan";
 import { PlanSyncProvider } from "./services/plan-sync";
+import { InitOrchestrator } from "./services/code-understanding/orchestrator";
 import readline from "node:readline/promises";
 
 recorder.register(createJsonlReporter());
@@ -48,138 +48,76 @@ export function parseSkillArgs(
 }
 
 async function main() {
-  // 过滤掉 pnpm 传递的 "--" 分隔符，保证解析稳定
-  const rawArgs = process.argv.slice(2).filter(arg => arg !== "--");
-  const raw = rawArgs.join(" ").trim();
+  const argv = process.argv.slice(2);
+  const raw = argv.join(" ").trim();
 
+  if (!raw) {
+    console.log("请提供命令。可用命令：\n" + listSkills());
+    process.exitCode = 1;
+    return;
+  }
 
+  // === 拦截 /init ===
+  if (raw.startsWith("/init")) {
+    console.log("🔍 正在启动代码骨架扫描...");
+    
+    // 🌟 修复路径漂移：优先使用 --path 参数，其次使用当前工作目录 (cwd)
+    let root = process.cwd();
+    const pathArgMatch = raw.match(/--path=([^\s]+)/);
+    if (pathArgMatch) {
+      root = path.resolve(pathArgMatch[1]);
+    } else {
+      // 如果没有传参数，但当前目录恰好是 team-dev-assistant，依然使用 cwd 兜底
+      root = process.cwd(); 
+    }
+    
+    console.log(`📂 扫描目标目录: ${root}`);
+    const orchestrator = new InitOrchestrator();
+    const skeletons = await orchestrator.execute(root);
 
-  // === 拦截 /plan ===
-  if (raw.startsWith("/plan ")) {
-    const requirement = raw.slice(6).trim();
-    if (!requirement) {
-      console.error("❌ 请提供需求描述。用法: /plan <需求>");
+    if (skeletons.length === 0) {
+      console.log("⚠️ 未识别到受支持的语言（TS/JS, Python）。");
       return;
     }
 
-    console.log(`\n🧠 正在分析需求并检索上下文...`);
-    const service = new PlanService();
-    
-    try {
-      const { tasks, contextCount } = await service.generate(requirement);
-      
-      if (contextCount > 0) {
-        console.log(`🔍 已自动注入 ${contextCount} 条相关 Playbook 上下文。`);
-      } else {
-        console.log("⚠️ 未检索到相关 Playbook 上下文，基于通用经验规划。");
-      }
+    console.log(`✅ 识别到 ${skeletons.length} 种语言架构：`);
+    skeletons.forEach(s => console.log(`  - ${s.language} (类型: ${s.projectType}, 精度: ${s.accuracy}), ${s.routes.length} 路由, ${s.services.length} 服务`));
 
-      console.log(`\n📋 生成的计划 (${tasks.length} 个任务):\n`);
-      tasks.forEach((t: PlanOutput["tasks"][number], i: number) => {
-        console.log(`  [${i + 1}] ${t.title}`);
-        if (t.dependsOn) console.log(`      依赖: ${t.dependsOn}`);
-        console.log(`      ${t.description.split("\n")[0]}`);
+    console.log("🤖 正在请求大模型推断业务事实（生成草案）...");
+    const skeletonSummary = skeletons.map(s => `
+语言: ${s.language} (类型: ${s.projectType})
+路由: ${s.routes.join(", ")}
+服务: ${s.services.map(x => `${x.name}(${x.methods.join(", ")})`).join("; ")}
+环境变量: ${s.envVars.join(", ")}
+`).join("\n---\n");
+
+    const prompt = `以下是一个项目的多语言代码骨架。请推断这些结构可能的业务含义，并生成 3-5 条高价值的“业务事实（Fact）”。
+格式：- [domain] 事实内容
+
+【骨架】
+${skeletonSummary}`;
+
+    try {
+      const result = await runAgent("你是一个资深的软件架构师。", prompt, {
+        maxSteps: 1,
+        tools: [],
+        executeTools: async () => [],
       });
 
-      const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-      const answer = await rl.question("\n是否将这些任务同步创建为 GitHub Issue? (y/n): ");
-      rl.close();
+      console.log("\n=== 生成的 Fact 草案 ===\n");
+      console.log(result);
+      console.log("\n========================\n");
 
-      if (answer.toLowerCase() === "y") {
-        console.log("\n🚀 开始创建 Issue...");
-        const syncProvider = new PlanSyncProvider();
-        const created = await syncProvider.syncBatch({ tasks });
-        console.log(`\n✅ 成功创建 ${created.length} 个 Issue。`);
-      } else {
-        console.log("⏭️ 已取消创建。");
-      }
-    } catch (e) {
-      console.error(`❌ 计划生成失败: ${(e as Error).message}`);
-    }
-    return;
-  }
-
-
-  // === 拦截 /review-conflicts ===
-  if (raw === "/review-conflicts") {
-    const service = new ConflictService();
-    const files = service.list();
-
-    if (files.length === 0) {
-      console.log("✅ 当前没有待处理的冲突。");
-      return;
-    }
-
-    console.log(`\n⚠️ 发现 ${files.length} 个待处理的冲突文件：\n`);
-    
-    for (let i = 0; i < files.length; i++) {
-      const fileName = files[i];
-      console.log(`  [${i + 1}] ${fileName}`);
+      const pendingDir = path.join(root, ".tda/playbook/.pending");
+      if (!fs.existsSync(pendingDir)) fs.mkdirSync(pendingDir, { recursive: true });
       
-      // 这里可以通过 fs 读取文件内容来展示冲突详情，为了简洁这里只列出文件名
-      // 实际生产中可以解析 frontmatter 打印 conflict_with
-    }
-
-    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-    const answer = await rl.question("\n请输入要采纳的编号 (用逗号分隔, 输入 a 采纳全部, 0 取消): ");
-    rl.close();
-
-    if (answer.trim() === "0") {
-      console.log("⏭️ 已取消操作。");
-      return;
-    }
-
-    let targets: string[] = [];
-    if (answer.trim().toLowerCase() === "a") {
-      targets = files;
-    } else {
-      targets = answer.split(",").map(s => files[parseInt(s.trim()) - 1]).filter(Boolean);
-    }
-
-    let count = 0;
-    for (const target of targets) {
-      try {
-        service.approve(target);
-        count++;
-      } catch (e) {
-        console.error(`  ❌ 处理 ${target} 失败: ${(e as Error).message}`);
-      }
-    }
-    console.log(`\n✅ 已采纳 ${count} 个冲突条目，并合并至正式 Playbook。`);
-    return;
-  }
-
-  // === 拦截 /todo ===
-  if (rawArgs[0] === "/todo") {
-    const service = new TodoService();
-    const args = rawArgs.slice(1);
-
-    if (args.length === 0 || args[0] === "list") {
-      const todos = service.load();
-      if (todos.length === 0) {
-        console.log("✅ 当前没有待处理的 Todo。");
-      } else {
-        console.log(`\n📋 待处理 TODO (${todos.length}):\n`);
-        todos.forEach((t, i) => {
-          const status = t.issueUrl ? "☁️ 已建 Issue" : "💻 仅本地";
-          console.log(`  [${i + 1}] ${status} | ${t.createdAt.slice(0, 10)} | ${t.description}`);
-          if (t.issueUrl) console.log(`       链接: ${t.issueUrl}`);
-        });
-        console.log("");
-      }
-      return;
-    }
-
-    const description = args.join(" ").trim();
-    let item = service.add(description);
-    console.log(`📝 已记录 Todo: "${description}"`);
-
-    const provider = new GitHubSyncProvider();
-    item = await provider.sync(item);
-    service.update(item);
-
-    if (item.issueUrl) {
-      console.log(`✅ 已同步至 GitHub Issue: ${item.issueUrl}`);
+      const filename = `init-draft-${Date.now()}.md`;
+      fs.writeFileSync(path.join(pendingDir, filename), result, "utf-8");
+      
+      console.log(`✅ Fact 草案已保存至 .tda/playbook/.pending/${filename}`);
+      console.log("👉 请审查后运行 /review-conflicts 批量采纳。");
+    } catch (e: any) {
+      console.error("❌ 推断失败:", e.message);
     }
     return;
   }
@@ -203,7 +141,6 @@ async function main() {
         console.table(result.trace);
       }
     } else {
-      // 保持原有的单次检索逻辑
       const pack = await getContextPackAsync(requirement);
       if (!pack) {
         console.log("⚠️ 未找到相关上下文，请确保 docs/playbook 中已沉淀相关资产。");
@@ -224,69 +161,68 @@ async function main() {
     
     if (facts.length === 0) {
       console.log("✅ 未发现新的 @fact 注释。");
+    } else {
+      console.log(`✅ 发现 ${facts.length} 条事实，请参考 .tda 目录下的日志。`);
+    }
+    return;
+  }
+
+  // === 拦截 /todo ===
+  if (raw.startsWith("/todo")) {
+    const todoService = new TodoService();
+    const syncProvider = new GitHubSyncProvider();
+    todoService.registerSyncProvider(syncProvider);
+
+    if (raw === "/todo list") {
+      const todos = todoService.list();
+      console.log(todos.length === 0 ? "✅ 暂无待处理任务" : JSON.stringify(todos, null, 2));
       return;
     }
-    
-    const dir = path.resolve(root, "docs/playbook");
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    const desc = raw.slice(5).trim();
+    const result = await todoService.add(desc);
+    console.log(`✅ 任务已记录：${result.id}`);
+    return;
+  }
 
-    let count = 0;
-    for (const fact of facts) {
-      // 幂等性核心：基于来源路径和内容生成固定 hash，确保同样代码生成同名文件
-      const hash = crypto.createHash("md5").update(fact.sourceFile + fact.content).digest("hex").slice(0, 8);
-      const fileName = `fact-${hash}.md`;
-      const filePath = path.join(dir, fileName);
-      const today = new Date().toISOString().split("T")[0];
+  // === 拦截 /plan ===
+  if (raw.startsWith("/plan ")) {
+    const requirement = raw.slice(6).trim();
+    const planService = new PlanService();
+    const syncProvider = new PlanSyncProvider();
+    planService.registerSyncProvider(syncProvider);
 
-      const content = `---
-id: fact-${hash}
-type: fact
-domain: ${fact.domain}
-status: active
-title: 从代码 ${fact.sourceFile} 提取
-decision: ${fact.content}
-alternatives: []
-rationale: 从代码注释中自动捕获的业务约束，请人工复核补充决策上下文
-decided_at: ${today}
-supersedes: []
----
-${fact.content}`;
+    const { tasks, contextCount } = await planService.generate(requirement);
+    console.log(`\n✅ 规划完成 (读取了 ${contextCount} 条上下文)：\n`);
+    tasks.forEach((t, i) => console.log(`${i + 1}. ${t.title}${t.dependsOn ? ` (依赖: ${t.dependsOn})` : ""}\n   ${t.description}\n`));
+    return;
+  }
 
-      // 只有内容不存在或发生变化时才写入，防止 CI 中产生无意义的 diff
-      let shouldWrite = true;
-      try {
-        const existing = fs.readFileSync(filePath, "utf-8");
-        shouldWrite = existing !== content;
-      } catch (e: any) {
-        // 如果文件不存在 (ENOENT)，说明是新文件，直接写入；如果是其他错误则抛出
-        if (e.code !== "ENOENT") throw e;
-      }
-
-      if (shouldWrite) {
-        fs.writeFileSync(filePath, content);
-      }
-      count++;
+  // === 拦截 /review-conflicts ===
+  if (raw === "/review-conflicts") {
+    const conflictService = new ConflictService();
+    const pending = conflictService.listPending();
+    if (pending.length === 0) {
+      console.log("✅ 无待处理冲突。");
+      return;
     }
-    console.log(`✅ 成功提取并扫描 ${count} 条 Fact。`);
+    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+    for (const p of pending) {
+      console.log(`\n冲突: ${p.title}`);
+      console.log(`内容: ${p.content}`);
+      const answer = await rl.question("采纳? (y/n): ");
+      if (answer.toLowerCase() === "y") {
+        conflictService.resolve(p.id, true);
+      } else {
+        conflictService.resolve(p.id, false);
+      }
+    }
+    rl.close();
     return;
   }
 
-  // === 常规 Skill 执行 ===
-  if (!raw || raw === "/help" || raw === "help") {
-    console.log("可用命令：\n" + listSkills());
-    console.log("\n附加命令：");
-    console.log("  /inject <需求>  提取项目上下文，供外部模型使用");
-    console.log("  /sync-facts     扫描代码中的 @fact 注释生成文档");
-    console.log("  /todo <描述>    记录临时任务并（尝试）同步到 GitHub");
-    console.log("  /todo list      查看待处理任务");
-    console.log("  /plan <需求>    调用 AI 辅助拆解需求并创建 Issue");
-    console.log("  /review-conflicts 处理 Playbook 冲突的异步暂存文件");
-    return;
-  }
-
+  // === Agent 技能拦截 ===
   const parts = raw.split(/\s+/);
   const command = parts[0];
-
   const skillName = command.startsWith("/") ? command.slice(1) : command;
   const skill = skillsByName.get(skillName);
 
@@ -296,52 +232,12 @@ ${fact.content}`;
     return;
   }
 
-  const unknownTools = skill.tools.filter((t) => !toolsByName.has(t));
-  if (unknownTools.length > 0) {
-    console.error(`❌ skill "${skill.name}" 声明了未注册的工具：${unknownTools.join(", ")}`);
-    process.exitCode = 1;
-    return;
-  }
-
-  const { args, positional } = parseSkillArgs(parts.slice(1), skill as any);
-
-  const parsed = skill.parameters.safeParse(args);
-  if (!parsed.success) {
-    console.error("参数错误：");
-    for (const i of parsed.error.issues) {
-      console.error(`  ${i.path.join(".")}: ${i.message}`);
-    }
-    process.exitCode = 2;
-    return;
-  }
-
-  const userMessage = skill.buildUserMessage({
-    input: positional.join(" "),
-    args: parsed.data as Record<string, unknown>,
-    cwd: process.cwd(),
-  });
-
-  const allowedTools = openAITools.filter(
-    (t) => t.type === "function" && skill.tools.includes(t.function.name)
-  );
-
-  const verbose = process.env.TDA_VERBOSE !== "0" && args.quiet !== true;
-
-  console.log(`\n🚀 /${skill.name}\n`);
-  const answer = await runAgent(skill.system, userMessage, {
-    verbose,
-    maxSteps: skill.maxSteps,
-    tools: allowedTools,
-    executeTools: executeToolCalls,
-  });
-  console.log(`\n${answer}\n`);
+  const { args, positional } = parseSkillArgs(parts.slice(1), skill);
+  const result = await skill.execute(args, positional);
+  if (result) console.log(result);
 }
 
-main()
-  .catch((e) => {
-    console.error(e);
-    process.exitCode = 1;
-  })
-  .finally(() => {
-    recorder.flush().catch((e) => console.error("[trace] flush 失败:", e));
-  });
+main().catch((e) => {
+  console.error("执行失败:", e);
+  process.exit(1);
+});
