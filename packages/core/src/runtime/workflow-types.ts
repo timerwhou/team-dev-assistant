@@ -9,6 +9,12 @@ export const WorkflowManifestSchema = z.object({
     maxIterations: z.number().int().positive().default(5),
     maxResultsPerTool: z.number().int().positive().default(3),
   }).optional(),
+  // 🌟 v1.12.0 新增：支持 Webhook 触发
+  triggers: z.array(z.object({
+    type: z.literal("webhook"),
+    token: z.string().min(8),
+    secret: z.string().optional(), // 用于 HMAC-SHA256 验签的密钥
+  })).optional(),
 });
 
 export type WorkflowManifest = z.infer<typeof WorkflowManifestSchema>;

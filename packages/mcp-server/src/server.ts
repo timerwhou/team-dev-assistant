@@ -15,6 +15,7 @@ import { registerProjectFilesResource } from "./resources/project-files";
 import { registerReadFile } from "./tools/read-file";
 import { WorkflowStore } from "./workflow-store";
 import { MemoryStore } from "@tda/core";
+import { handleWebhook } from "./api/webhook-handler";
 
 if (process.env.OTEL_ENABLED === "true") {
   init({ serviceName: "team-dev-assistant-mcp" });
@@ -124,6 +125,9 @@ export function startHttpServer(port = parseInt(process.env.MCP_HTTP_PORT || "30
       res.end();
       return;
     }
+
+    // 🌟 Webhook 拦截（必须在所有业务路由之前）
+    if (await handleWebhook(req, res)) return;
 
     // 🌟 托管 Studio 静态资源
     if (req.url?.startsWith("/studio")) {
@@ -365,14 +369,12 @@ export function startHttpServer(port = parseInt(process.env.MCP_HTTP_PORT || "30
     if (req.url?.startsWith("/api/workflows/execute") && req.method === "POST") {
       const workflowId = "wf-" + Date.now();
       
-      // 返回触发成功
       res.writeHead(200, { 
         "Content-Type": "application/json",
         "Access-Control-Allow-Origin": "*" 
       });
       res.end(JSON.stringify({ workflowId, message: "工作流已开始执行" }));
 
-      // 🌟 修复：显式声明为 AgenticTraceEvent 数组，防止 TypeScript 推断为 string
       const mockTrace: import("@tda/core").AgenticTraceEvent[] = [];
       
       setTimeout(() => {
@@ -392,7 +394,6 @@ export function startHttpServer(port = parseInt(process.env.MCP_HTTP_PORT || "30
         mockTrace.push(evt);
         traceBus.publish(workflowId, evt);
         
-        // 🌟 将完整 Trace 落盘
         const store = new MemoryStore();
         store.recordTrace(workflowId, "Studio Mock Execution", mockTrace, 1, "completed");
       }, 4000);

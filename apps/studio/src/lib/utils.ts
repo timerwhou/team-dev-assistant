@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import type { WorkflowManifest } from "@tda/core";
@@ -35,11 +36,19 @@ export function mapNodesToManifest(
   const stageCapabilities: Record<string, string[]> = {};
   for (const stage of stages) stageCapabilities[stage] = Array.from(capsMap[stage]);
 
+  // 🌟 如果是新建工作流，自动生成 Webhook 触发器
+  const triggers = assetId ? undefined : [{
+    type: "webhook" as const,
+    token: crypto.randomUUID(),
+    secret: crypto.randomUUID(), // 实际生产环境应让用户自己填
+  }];
+
   return {
     name: assetId ? "loaded-workflow" : `studio-workflow-${Date.now()}`,
     description: "Studio 生成的工作流",
     stages,
     stageCapabilities,
     governance: { maxIterations: 5, maxResultsPerTool: 3 },
+    triggers,
   };
 }
