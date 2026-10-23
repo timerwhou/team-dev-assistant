@@ -17,7 +17,7 @@ import { registerReadFile } from "./tools/read-file";
 import { WorkflowStore } from "./workflow-store";
 import { handleWebhook } from "./api/webhook-handler";
 import { MemoryStore } from "@tda/core";
-import { handleWebhook } from "./api/webhook-handler";
+
 
 if (process.env.OTEL_ENABLED === "true") {
   init({ serviceName: "team-dev-assistant-mcp" });
