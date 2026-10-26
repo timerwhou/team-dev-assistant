@@ -67,12 +67,18 @@ jobs:
           version: 10
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Build a2a types
-        run: pnpm --filter @tda/a2a build
-      - run: pnpm -r --no-bail typecheck
+      - name: Cache Turborepo
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: ${{ runner.os }}-turbo-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-turbo-
+      - name: Run Typecheck (Turbo Topological Pipeline)
+        run: pnpm turbo run typecheck
 
   # ---------- Unit Tests ----------
   test:
@@ -88,13 +94,19 @@ jobs:
           version: 10
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Build a2a types
-        run: pnpm --filter @tda/a2a build
+      - name: Cache Turborepo
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: ${{ runner.os }}-turbo-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-turbo-
       - run: sudo apt-get update && sudo apt-get install -y ripgrep
-      - run: pnpm -r --no-bail --if-present test
+      - name: Run Tests (Turbo Pipeline)
+        run: pnpm turbo run test
       - run: pnpm --filter @tda/cli dev -- /help
 
       - name: Verify Playbook Sync
@@ -142,15 +154,13 @@ jobs:
           version: 10
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - name: Install ripgrep
         run: sudo apt-get update && sudo apt-get install -y ripgrep
-      - name: Build A2A Package
-        run: pnpm --filter @tda/a2a build
-      - name: Build MCP Server
-        run: pnpm --filter @tda/mcp-server build
+      - name: Build MCP Server and Dependencies (Turbo Pipeline)
+        run: pnpm turbo run build --filter=@tda/mcp-server...
       - name: Run MCP Probe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -7,6 +7,11 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "development": "./src/index.ts"
+    },
+    "./lib/env": {
+      "types": "./dist/lib/env.d.ts",
+      "import": "./dist/lib/env.js",
+      "development": "./src/lib/env.ts"
     }
   },
   "scripts": {

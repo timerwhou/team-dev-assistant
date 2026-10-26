@@ -1,9 +1,9 @@
 import { defineConfig } from 'tsup';
 
 export default defineConfig({
-  entry: ['src/index.ts'],
+  entry: ['src/index.ts', 'src/lib/env.ts'],
   format: ['esm'],
-  clean: false, // 由 tsc 与 clean 任务管理，避免竞争
+  clean: false,
   sourcemap: true,
   shims: true,
 });
