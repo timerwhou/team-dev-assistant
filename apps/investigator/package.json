@@ -4,7 +4,9 @@
   "type": "module",
   "scripts": {
     "dev": "tsx src/index.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build": "tsup src/index.ts --format esm --clean",
+    "clean": "rimraf dist"
   },
   "dependencies": {
     "@tda/a2a": "workspace:*",
