@@ -19,7 +19,7 @@
     "@tda/skills": "workspace:*",
     "@telemetry-dev/mcp": "^0.1.8",
     "@telemetry-dev/sdk": "^0.1.9",
-    "jose": "^6.2.12",
+    "jose": "^6.2.13",
     "zod": "^4.6.7",
     "@tda/a2a": "workspace:*"
   },
