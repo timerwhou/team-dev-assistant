@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.14.0](https://github.com/timerwhou/team-dev-assistant/compare/v1.13.1...v1.14.0) (2026-10-27)
+
+
+### Features
+
+* **factory:** 能力工厂与协同看板交互 ([#184](https://github.com/timerwhou/team-dev-assistant/issues/184)) ([#203](https://github.com/timerwhou/team-dev-assistant/issues/203)) ([8d3a429](https://github.com/timerwhou/team-dev-assistant/commit/8d3a429340d7623e7d7476a7519f546fe30c1505))
+* **security:** Webhook 触发与 HMAC 安全校验 ([#183](https://github.com/timerwhou/team-dev-assistant/issues/183)) ([#201](https://github.com/timerwhou/team-dev-assistant/issues/201)) ([4f83758](https://github.com/timerwhou/team-dev-assistant/commit/4f83758a46b4611aa0323c0374bceeb830b09a0a))
+
 ## [1.13.1](https://github.com/timerwhou/team-dev-assistant/compare/v1.13.0...v1.13.1) (2026-10-23)
 
 
