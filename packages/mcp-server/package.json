@@ -12,14 +12,14 @@
     "test": "node --import tsx --test test/*.test.ts"
   },
   "dependencies": {
-    "@modelcontextprotocol/node": "^2.1.1",
-    "@modelcontextprotocol/server": "^2.3.1",
+    "@modelcontextprotocol/node": "^2.1.2",
+    "@modelcontextprotocol/server": "^2.4.0",
     "@olaservo/ext-skills": "^0.16.0",
     "@tda/core": "workspace:*",
     "@tda/skills": "workspace:*",
     "@telemetry-dev/mcp": "^0.1.8",
     "@telemetry-dev/sdk": "^0.1.9",
-    "jose": "^6.2.12",
+    "jose": "^6.2.13",
     "zod": "^4.6.7",
     "@tda/a2a": "workspace:*"
   },
