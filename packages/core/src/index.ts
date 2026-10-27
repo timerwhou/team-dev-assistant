@@ -43,3 +43,6 @@ export * from "./runtime/memory-store";
 
 // Workflow Asset
 export type { WorkflowAsset } from "./runtime/workflow-types";
+
+// A2A Bus
+export * from "./runtime/a2a-bus";

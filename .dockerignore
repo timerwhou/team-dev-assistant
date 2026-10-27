@@ -1,12 +1,8 @@
 node_modules
-**/node_modules
 dist
-**/dist
+.turbo
 .git
-.github
-.traces
-.env
-.env.local
+.env*
+docs/evolution-log
 *.log
-docs/site/.vitepress/dist
-docs/site/.vitepress/cache
+tmp-*

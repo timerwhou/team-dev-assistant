@@ -22,3 +22,6 @@ docs/site/eval/*.md
 
 # Local Todo cache
 .tda/
+
+# Turborepo local cache
+.turbo

@@ -16,7 +16,7 @@ import { registerProjectFilesResource } from "./resources/project-files";
 import { registerReadFile } from "./tools/read-file";
 import { WorkflowStore } from "./workflow-store";
 import { handleWebhook } from "./api/webhook-handler";
-import { MemoryStore } from "@tda/core";
+import { MemoryStore, a2aBus } from "@tda/core";
 
 
 if (process.env.OTEL_ENABLED === "true") {
@@ -116,6 +116,28 @@ export function startHttpServer(port = parseInt(process.env.MCP_HTTP_PORT || "30
     // 🌟 Webhook 拦截（必须在所有业务路由之前）
     if (await handleWebhook(req, res)) return;
 
+    // 🌟 A2A 协同 SSE 流
+    if (req.url?.startsWith("/api/a2a/stream/") && req.method === "GET") {
+      const workflowId = req.url.split("/api/a2a/stream/")[1];
+      res.writeHead(200, {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+        "Access-Control-Allow-Origin": "*",
+      });
+      res.flushHeaders();
+
+      const handler = (event: any) => {
+        res.write(`data: ${JSON.stringify(event)}\n\n`);
+      };
+      
+      a2aBus.on(`a2a:${workflowId}`, handler);
+
+      req.on("close", () => {
+        a2aBus.off(`a2a:${workflowId}`, handler);
+      });
+      return;
+    }
     // 🌟 全局 CORS 头部处理
     const origin = req.headers.origin;
     if (origin && allowedOrigins.includes(origin)) {
