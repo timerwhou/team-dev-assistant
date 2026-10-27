@@ -138,7 +138,6 @@ export function startHttpServer(port = parseInt(process.env.MCP_HTTP_PORT || "30
       });
       return;
     }
-
     // 🌟 全局 CORS 头部处理
     const origin = req.headers.origin;
     if (origin && allowedOrigins.includes(origin)) {

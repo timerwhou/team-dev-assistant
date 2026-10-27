@@ -1,0 +1,58 @@
+name: team-dev-assistant
+
+x-agent-base: &agent-base
+  image: ghcr.io/timerwhou/team-dev-assistant:v1.12.0
+  env_file:
+    - ../.env
+  environment:
+    - NODE_ENV=production
+
+services:
+  mcp-server:
+    <<: *agent-base
+    container_name: tda-mcp-server
+    ports:
+      - "3000:3000"
+    environment:
+      - MCP_TRANSPORT=http
+      - MCP_API_KEY=${MCP_API_KEY}
+      - OAUTH_ISSUER=${OAUTH_ISSUER}
+    volumes:
+      - ../.tda:/app/.tda
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/health').then(r=>{if(!r.ok)process.exit(1)})"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  reviewer:
+    <<: *agent-base
+    container_name: tda-reviewer
+    command: ["node", "apps/reviewer/dist/index.js"]
+    ports:
+      - "4101:4101"
+    environment:
+      - PORT=4101
+
+  investigator:
+    <<: *agent-base
+    container_name: tda-investigator
+    command: ["node", "apps/investigator/dist/index.js"]
+    ports:
+      - "4102:4102"
+    environment:
+      - PORT=4102
+
+  coordinator:
+    <<: *agent-base
+    container_name: tda-coordinator
+    command: ["node", "apps/coordinator/dist/index.js"]
+    depends_on:
+      reviewer:
+        condition: service_started
+      investigator:
+        condition: service_started
+    environment:
+      - REVIEWER_URL=http://reviewer:4101
+      - INVESTIGATOR_URL=http://investigator:4102

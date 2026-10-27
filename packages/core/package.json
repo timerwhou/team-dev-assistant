@@ -3,19 +3,22 @@
   "version": "0.1.0",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts",
-    "./lib/env": "./src/lib/env.ts",
-    "./lib/llm": "./src/lib/llm.ts",
-    "./agent/loop": "./src/agent/loop.ts",
-    "./lib/search-code": "./src/lib/search-code.ts",
-    "./trace": "./src/trace/recorder.ts",
-    "./trace/reporters/jsonl": "./src/trace/reporters/jsonl.ts",
-    "./trace/reporters/console": "./src/trace/reporters/console.ts",
-    "./context": "./src/context/index.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "development": "./src/index.ts"
+    },
+    "./lib/env": {
+      "types": "./dist/lib/env.d.ts",
+      "import": "./dist/lib/env.js",
+      "development": "./src/lib/env.ts"
+    }
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "node --import tsx --test test/*.test.ts"
+    "test": "node --import tsx --test test/*.test.ts",
+    "build": "tsup && tsc -p tsconfig.dts.json",
+    "clean": "rimraf dist"
   },
   "dependencies": {
     "dotenv": "^18.0.8",
@@ -23,5 +26,7 @@
     "zod": "^4.6.7"
   },
   "license": "MIT",
-  "description": "Agent 核心：LLM 调用 + Agent 循环 + 收敛机制 + trace"
+  "description": "Agent 核心：LLM 调用 + Agent 循环 + 收敛机制 + trace",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts"
 }

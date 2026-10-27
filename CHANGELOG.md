@@ -1,5 +1,35 @@
 # Changelog
 
+## [1.13.1](https://github.com/timerwhou/team-dev-assistant/compare/v1.13.0...v1.13.1) (2026-10-23)
+
+
+### Bug Fixes
+
+* **ci:** 修正 Docker Build Check 的 Dockerfile 路径为根目录 ([5331db1](https://github.com/timerwhou/team-dev-assistant/commit/5331db16bf7f79d4ac086e7eb9d09c7aa92bd702))
+* **ci:** 修正 publish.yml 的 Dockerfile 路径为根目录 ([054ab15](https://github.com/timerwhou/team-dev-assistant/commit/054ab158e9855102102ddbd17b96197adb75ccf1))
+
+## [1.13.0](https://github.com/timerwhou/team-dev-assistant/compare/v1.12.0...v1.13.0) (2026-10-23)
+
+
+### Features
+
+* **docker:** 重构为多 Agent 生产级部署方案 ([1bf8681](https://github.com/timerwhou/team-dev-assistant/commit/1bf8681ae36539a46bda7b4456b2a72cbcea9ff9))
+
+## [1.12.0](https://github.com/timerwhou/team-dev-assistant/compare/v1.11.0...v1.12.0) (2026-10-23)
+
+
+### Features
+
+* **cli:** 实现 /init 智能冷启动与多语言代码理解适配器 ([#191](https://github.com/timerwhou/team-dev-assistant/issues/191)) ([fbe8980](https://github.com/timerwhou/team-dev-assistant/commit/fbe89802144dc6e69119ff0f369ea7f3a2419a98))
+* **core:** 实现 A2A 协同看板与多 Agent 实时观测 ([#194](https://github.com/timerwhou/team-dev-assistant/issues/194)) ([3acb340](https://github.com/timerwhou/team-dev-assistant/commit/3acb34090c1067bc5c43c3f3143dcbc9389c8770))
+* **mcp-server:** 实现 Webhook 触发与 HMAC-SHA256 安全校验 ([#193](https://github.com/timerwhou/team-dev-assistant/issues/193)) ([613e439](https://github.com/timerwhou/team-dev-assistant/commit/613e4394f14c59f88e6bdc0edff73c1f38dd91d5))
+
+
+### Bug Fixes
+
+* **ci:** 豁免 Dependabot PR 的 Closes 强制检查 ([40cb9b4](https://github.com/timerwhou/team-dev-assistant/commit/40cb9b4361816e7b07338a091458ed93afe27130))
+* **mcp-server:** 将 @tda/a2a 加入 tsup noExternal，修复 ESM 打包兼容性 ([f75f7be](https://github.com/timerwhou/team-dev-assistant/commit/f75f7beeccdfcc6b0b0012d919b37cb88b61f305))
+
 ## [1.11.0](https://github.com/timerwhou/team-dev-assistant/compare/v1.10.0...v1.11.0) (2026-10-22)
 
 

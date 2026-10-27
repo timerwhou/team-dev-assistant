@@ -5,7 +5,8 @@ export default defineConfig({
   entry: ['src/index.ts'],
   format: ['esm'],
   clean: true,
-  noExternal: ['@tda/core', '@tda/skills'],
+  // 🌟 关键修复：将 @tda/a2a 也加入 noExternal，确保 ESM/CJS 兼容
+  noExternal: ['@tda/core', '@tda/skills', '@tda/a2a'],
   // 注入 createRequire，让 ESM 包内的 require() 正常工作
   banner: {
     js: `import { createRequire as __createRequire } from 'module'; var require = __createRequire(import.meta.url);`,
