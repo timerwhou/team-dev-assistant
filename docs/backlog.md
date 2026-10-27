@@ -3,11 +3,11 @@
 ## 📌 质量加固周期 (v1.14.1 / v1.15.0)
 
 ### P0：生产部署与白屏隐患 (Blocker)
-- [ ] **[Backlog-001] 前端 Studio 客户端误引用 Node 原生模块**
+- [x] **[Backlog-001] 前端 Studio 客户端误引用 Node 原生模块**
   - **位置**: `apps/studio/src/lib/utils.ts`
   - **现象**: `import from "node:crypto"` 在浏览器环境下会导致白屏崩溃
   - **方案**: 替换为 Web 标准 `globalThis.crypto.randomUUID()`
-- [ ] **[Backlog-002] SvelteKit 生产适配器缺失**
+- [x] **[Backlog-002] SvelteKit 生产适配器缺失**
   - **位置**: `apps/studio/svelte.config.js`
   - **现象**: `studio:build: adapter_missing`，无法产出确定的独立生产部署包
   - **方案**: 引入 `@sveltejs/adapter-static` 达成 SPA 纯净静态导出
