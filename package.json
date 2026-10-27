@@ -14,7 +14,9 @@
     "docs:build": "pnpm docs:gen && vitepress build docs/site",
     "docs:preview": "vitepress preview docs/site",
     "docs:gen": "node scripts/generate-skills-docs.mjs && node scripts/generate-eval-docs.mjs",
-    "graph": "madge --image docs/dependency-graph.svg --extensions ts,svelte apps packages"
+    "graph": "madge --image docs/dependency-graph.svg --extensions ts,svelte apps packages",
+    "build": "turbo run build",
+    "clean": "turbo run clean && rimraf dist .turbo"
   },
   "devDependencies": {
     "@commitlint/config-conventional": "^21.2.3",
@@ -24,11 +26,15 @@
     "gray-matter": "^4.0.3",
     "husky": "^9.1.7",
     "madge": "^8.0.0",
+    "rimraf": "^6.1.3",
+    "tsup": "^9.0.0",
     "tsx": "^4.23.15",
+    "turbo": "^2.11.10",
     "typescript": "^7.0.2",
     "vitepress": "^1.6.4"
   },
   "version": "1.13.1",
   "license": "MIT",
-  "description": "面向研发团队的 AI Agent 工具集：一条命令启动代码评审、问题排查、Issue 汇总三类 Agent，支持 CLI / A2A / MCP 接入，多 Agent 协作。内置可观测性（LLM/Agent trace）、安全加固（防命令注入/路径穿越）与评估体系（回归用例），开箱可用。"
+  "description": "面向研发团队的 AI Agent 工具集：一条命令启动代码评审、问题排查、Issue 汇总三类 Agent，支持 CLI / A2A / MCP 接入，多 Agent 协作。内置可观测性（LLM/Agent trace）、安全加固（防命令注入/路径穿越）与评估体系（回归用例），开箱可用。",
+  "packageManager": "pnpm@12.14.0"
 }
