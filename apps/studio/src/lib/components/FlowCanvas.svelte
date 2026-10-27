@@ -81,6 +81,9 @@
     bind:edges
     {nodeTypes}
     fitView
+    fitViewOptions={{ padding: 0.15, minZoom: 0.25, maxZoom: 1 }}
+    minZoom={0.25}
+    maxZoom={2}
     class="bg-slate-50"
     onselectionchange={handleSelectionChange}
     onnodeclick={({ node }) => onSelectNode(node as FlowNode)}
