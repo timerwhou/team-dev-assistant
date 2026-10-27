@@ -19,9 +19,9 @@
     "clean": "turbo run clean && rimraf dist .turbo"
   },
   "devDependencies": {
-    "@commitlint/config-conventional": "^21.2.3",
+    "@commitlint/config-conventional": "^21.2.4",
     "@types/node": "^26.6.5",
-    "commitlint": "^21.2.3",
+    "commitlint": "^21.2.4",
     "concurrently": "^10.0.6",
     "gray-matter": "^4.0.3",
     "husky": "^9.1.7",
