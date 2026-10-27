@@ -6,6 +6,7 @@ import type {
   AgentRunTrace,
   ToolCallTrace,
   ContextBuildTrace,
+  RetrieverDegradedTrace,
 } from "./types";
 
 /** 去掉 id/timestamp/kind，由 recorder 补齐 */
@@ -41,6 +42,10 @@ class Recorder {
 
   emitContextBuild(payload: EmitPayload<ContextBuildTrace>): void {
     this.emit({ ...payload, kind: "context_build" } as TraceEvent);
+  }
+
+  emitRetrieverDegraded(payload: EmitPayload<RetrieverDegradedTrace>): void {
+    this.emit({ ...payload, kind: "retriever_degraded" } as TraceEvent);
   }
 
   private emit(partial: Omit<TraceEvent, "id" | "timestamp"> & { id?: string; timestamp?: string }): void {

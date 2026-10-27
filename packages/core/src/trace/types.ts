@@ -76,11 +76,36 @@ export type ContextBuildTrace = {
   reason: string;
 };
 
+/**
+ * 检索降级 trace：向量检索遭遇网络/模型异常时的结构化降级事件。
+ *
+ * 设计约束：
+ * - errorName 取 Error.name 供聚合分组，errorMessage 放自由文本供排障
+ * - 降级语义：VectorRetriever 本身返回空结果，字面召回由
+ *   AsyncHybridRetriever 的 BM25 通道兜底
+ */
+export type RetrieverDegradedTrace = {
+  kind: "retriever_degraded";
+  id: string;
+  timestamp: string;
+  /** 检索器标识 */
+  retriever: "vector" | "bm25" | "hybrid";
+  /** 失败阶段 */
+  operation: "embed" | "search";
+  /** 错误类名（Error.name，用于聚合分组） */
+  errorName: string;
+  /** 错误详情（自由文本，用于排障） */
+  errorMessage: string;
+  /** 降级动作 */
+  fallback: "empty_result" | "lexical";
+};
+
 export type TraceEvent =
   | LLMCallTrace
   | AgentRunTrace
   | ToolCallTrace
-  | ContextBuildTrace;
+  | ContextBuildTrace
+  | RetrieverDegradedTrace;
 
 export type Reporter = {
   name: string;

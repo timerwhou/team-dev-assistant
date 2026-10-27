@@ -1,3 +1,4 @@
+import { recorder } from "../trace/recorder";
 import type { PlaybookEntry, Retriever, AsyncRetriever } from "./types";
 import { createEmbeddingProvider } from "./embedding/factory";
 import type { EmbeddingProvider } from "./embedding/types";
@@ -71,26 +72,38 @@ export class VectorRetriever implements AsyncRetriever {
       e.title, e.domain, e.decision || "", e.rationale || "", e.content
     ].join("\n"));
     
+    let embeddings: number[][];
     try {
-      const embeddings = await this.provider.embed([requirement, ...docs]);
-      const queryVec = embeddings[0];
-      const docVecs = embeddings.slice(1);
-
-      const scores = docVecs.map((vec, i) => ({
-        entry: activeEntries[i],
-        score: this.cosineSimilarity(queryVec, vec)
-      }));
-
-      return scores
-        .filter(s => s.score > 0.3)
-        .sort((a, b) => b.score - a.score)
-        .map(s => s.entry);
-
+      // 网络/模型异常的唯一落点：嵌入调用
+      embeddings = await this.provider.embed([requirement, ...docs]);
     } catch (e) {
-      // 捕获 API 错误或无 Key 错误，平滑降级
-      console.warn("[VectorRetriever] 语义检索失败，自动降级到字面匹配:", (e as Error).message);
+      const err = e instanceof Error ? e : new Error(String(e));
+      console.warn("[VectorRetriever] 语义检索失败，本层返回空结果；字面召回由混合层 BM25 兜底:", err.message);
+
+      // 可观测性闭环：发射结构化降级 Trace 事件（可聚合、可告警）
+      recorder.emitRetrieverDegraded({
+        retriever: "vector",
+        operation: "embed",
+        errorName: err.name,
+        errorMessage: err.message,
+        fallback: "empty_result",
+      });
+
       return [];
     }
+
+    const queryVec = embeddings[0];
+    const docVecs = embeddings.slice(1);
+
+    const scores = docVecs.map((vec, i) => ({
+      entry: activeEntries[i],
+      score: this.cosineSimilarity(queryVec, vec)
+    }));
+
+    return scores
+      .filter(s => s.score > 0.3)
+      .sort((a, b) => b.score - a.score)
+      .map(s => s.entry);
   }
 
   private cosineSimilarity(vecA: number[], vecB: number[]): number {
