@@ -1,9 +1,10 @@
 <script lang="ts">
   import { SvelteFlow, Controls, Background, MiniMap, useSvelteFlow, type NodeTypes } from '@xyflow/svelte';
+  import type { Node as XYNode } from '@xyflow/svelte';
   import '@xyflow/svelte/dist/style.css';
   import { LayoutTemplate } from 'lucide-svelte';
   import type { FlowNode, FlowEdge, AddLogFn } from '#lib/types';
-  import StatusNode from './StatusNode.svelte'; // 🌟 引入自定义节点
+  import StatusNode from './StatusNode.svelte';
 
   let {
     nodes = $bindable<FlowNode[]>([]),
@@ -19,7 +20,7 @@
 
   const flow = useSvelteFlow();
 
-  // 🌟 核心修复：注册自定义节点类型
+  // 注册自定义节点类型
   const nodeTypes: NodeTypes = {
     status: StatusNode
   };
@@ -54,22 +55,37 @@
     if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
   }
 
-  function handleCanvasClick(event: MouseEvent) {
-    const target = event.target as HTMLElement;
-    const nodeElement = target.closest('.svelte-flow__node');
-    if (nodeElement) {
-      const nodeId = nodeElement.getAttribute('data-id');
-      if (nodeId) {
-        const targetNode = nodes.find(n => n.id === nodeId);
-        if (targetNode) { onSelectNode(targetNode); return; }
-      }
-    }
-    onSelectNode(null);
+  /**
+   * 选中态同步：鼠标点击、框选、键盘 Enter 选中最终都收敛到 xyflow 的
+   * 选中状态，由 onselectionchange 派生到外层检查器面板。
+   * 以库的状态机为单一事实源，不在组件里用 DOM 查询二次模拟点击语义。
+   */
+  function handleSelectionChange({ nodes: selected }: { nodes: XYNode[] }) {
+    const node = selected.length > 0 ? selected[selected.length - 1] : undefined;
+    onSelectNode(node ? (node as FlowNode) : null);
   }
 </script>
 
-<main class="absolute inset-0 bg-slate-50" ondrop={onDrop} ondragover={onDragOver} role="application" tabindex="-1" onclick={handleCanvasClick}>
-  <SvelteFlow bind:nodes bind:edges {nodeTypes} fitView class="bg-slate-50">
+<!-- 画布容器只承担 drop zone 语义；节点导航与键盘操作由 SvelteFlow 原生
+     无障碍能力承担（nodesFocusable 默认开启：Tab 循环节点、Enter 选中），
+     不在非交互元素上挂鼠标/键盘事件。 -->
+<div
+  class="absolute inset-0 bg-slate-50"
+  role="region"
+  aria-label="工作流编排画布，从左侧拖入组件开始编排"
+  ondrop={onDrop}
+  ondragover={onDragOver}
+>
+  <SvelteFlow
+    bind:nodes
+    bind:edges
+    {nodeTypes}
+    fitView
+    class="bg-slate-50"
+    onselectionchange={handleSelectionChange}
+    onnodeclick={({ node }) => onSelectNode(node as FlowNode)}
+    onedgeclick={() => onSelectNode(null)}
+  >
     <Background gap={20} size={1} />
     <Controls class="bg-white border-slate-200 shadow-sm rounded-md fill-slate-600" />
     <MiniMap class="bg-slate-100 border-slate-200 rounded-md" nodeColor="#94a3b8" />
@@ -83,4 +99,4 @@
       </div>
     </div>
   {/if}
-</main>
+</div>
