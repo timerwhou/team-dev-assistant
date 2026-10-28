@@ -39,6 +39,7 @@
   let isConsoleOpen = $state(false);
   let logs = $state<LogEntry[]>([]);
   let currentAssetId = $state<string | null>(null);
+  let currentAssetVersion = $state<number>(1);   // 乐观锁版本号：加载时取，保存后更新，冲突时重取
   let historyList = $state<Array<{ workflowId: string; requirement: string; status: string; timestamp: number; iterations: number }>>([]);
   let showHistory = $state(false);
 
@@ -52,7 +53,7 @@
 
   $effect(() => {
     // 防抖落盘画布快照（400ms）：刷新/崩溃后可恢复
-    const snapshot: StudioDraft = { version: 1, nodes, edges, currentAssetId, savedAt: Date.now() };
+    const snapshot: StudioDraft & { currentAssetVersion: number } = { version: 1, nodes, edges, currentAssetId, currentAssetVersion, savedAt: Date.now() };
     clearTimeout(draftTimer);
     draftTimer = setTimeout(() => {
       try {
@@ -73,6 +74,7 @@
           nodes = draft.nodes;
           edges = Array.isArray(draft.edges) ? draft.edges : [];
           currentAssetId = draft.currentAssetId ?? null;
+          currentAssetVersion = (draft as Record<string, unknown>).currentAssetVersion as number ?? 1;
           addLog("info", "已从本地草稿恢复画布", `节点 ${nodes.length} 个，边 ${edges.length} 条`);
         }
       }
@@ -87,6 +89,7 @@
         if (res.ok) {
           const asset = await res.json();
           currentAssetId = asset.id;
+          currentAssetVersion = typeof asset.version === 'number' ? asset.version : 1;
           nodes = Object.entries(asset.manifest.stageCapabilities).map(([stage, caps], index) => ({
             id: `node_${Date.now()}_${index}`,
             type: 'status',
@@ -137,7 +140,16 @@
     }
   }
 
-  /** 拖拽幽灵：节点样式克隆 × 画布缩放，居中于光标——拖动中与松手后视觉一致 */
+  /**
+   * 设计令牌：节点卡规格（单一事实源）
+   * 幽灵渲染与落点计算共享同一组尺寸，消除视觉/位置偏差
+   */
+  const NODE_CARD = {
+    width: 200, minHeight: 64, fontSize: 14,
+    padX: 24, padY: 12, radius: 8, border: 2,
+  };
+
+  /** 拖拽幽灵：按画布缩放渲染节点卡预览，居中于光标 */
   function handleStageDragStart(e: DragEvent, stage: (typeof STAGES_CONFIG)[number]) {
     const dt = e.dataTransfer;
     if (!dt) return;
@@ -147,19 +159,26 @@
     const count = nodes.filter((n) => n.data.stage === stage.stage).length;
     const label = `${stage.desc} ${count + 1}`;
 
+    const zoom = getZoomFn?.() ?? 1;
+    // 显式像素计算（不用 CSS zoom/transform——setDragImage 跨浏览器渲染不一致）
+    const w = Math.round(NODE_CARD.width * zoom);
+    const h = Math.round(NODE_CARD.minHeight * zoom);
+    const fs = Math.round(NODE_CARD.fontSize * zoom);
+    const px = Math.round(NODE_CARD.padX * zoom);
+    const py = Math.round(NODE_CARD.padY * zoom);
+    const br = Math.round(NODE_CARD.radius * zoom);
+    const bw = Math.max(1, Math.round(NODE_CARD.border * zoom));
+
     const ghost = document.createElement("div");
-    ghost.className = "absolute left-[-9999px] top-0 px-6 py-3 bg-white border-2 border-slate-200 rounded-lg shadow-sm";
+    ghost.style.cssText = `position:absolute;left:-9999px;top:0;box-sizing:border-box;` +
+      `width:${w}px;min-height:${h}px;padding:${py}px ${px}px;` +
+      `background:#fff;border:${bw}px solid #e2e8f0;border-radius:${br}px;box-shadow:0 1px 2px rgba(0,0,0,.05);`;
     const span = document.createElement("span");
-    span.className = "text-sm font-medium text-slate-700 whitespace-nowrap";
+    span.style.cssText = `font-size:${fs}px;font-weight:500;color:#334155;white-space:nowrap;line-height:1.25;`;
     span.textContent = label;
     ghost.appendChild(span);
     document.body.appendChild(ghost);
 
-    const zoom = getZoomFn?.() ?? 1;
-    if (zoom !== 1) ghost.style.setProperty("zoom", String(zoom));
-
-    const w = ghost.offsetWidth;
-    const h = ghost.offsetHeight;
     dt.setDragImage(ghost, Math.round(w / 2), Math.round(h / 2));
     dt.setData("application/studio-ghost", JSON.stringify({ w, h, zoom }));
 
@@ -200,7 +219,7 @@
       
       isConsoleOpen = true;
       showHistory = false;
-      toast.success('历史记录已加载');
+      toast.success('执行历史已加载');
     } catch (e: any) {
       toast.error(e.message);
     }
@@ -212,6 +231,9 @@
       return;
     }
     await handleSave();
+    if (!currentAssetId) {
+      addLog('warn', '⚠ 画布未持久化', '保存失败，本次执行基于未保存的画布');
+    }
     isRunning = true;
     addLog('info', '正在触发工作流执行...');
     try {
@@ -265,7 +287,7 @@
       const plainManifest = mapNodesToManifest(nodes, currentAssetId);
       const url = currentAssetId ? `${API_BASE}/api/assets/${currentAssetId}` : `${API_BASE}/api/assets`;
       const method = currentAssetId ? 'PUT' : 'POST';
-      const bodyData = method === 'PUT' ? { manifest: plainManifest, version: 1 } : plainManifest;
+      const bodyData = method === 'PUT' ? { manifest: plainManifest, version: currentAssetVersion } : plainManifest;
       
       const res = await fetch(url, {
         method,
@@ -273,12 +295,36 @@
         body: JSON.stringify(bodyData)
       });
       
+      // 乐观锁冲突：409 → 重取版本号 + 单次重试（last-write-wins with notification）
+      if (res.status === 409 && method === 'PUT') {
+        addLog('warn', '版本冲突', '检测到并发修改，正在用最新版本号重试保存...');
+        const cur = await fetch(`${API_BASE}/api/assets/${currentAssetId}`);
+        if (cur.ok) {
+          const curAsset = await cur.json();
+          currentAssetVersion = typeof curAsset.version === 'number' ? curAsset.version : 1;
+          const retryRes = await fetch(url, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ manifest: plainManifest, version: currentAssetVersion })
+          });
+          if (!retryRes.ok) throw new Error(`版本冲突重试失败: HTTP ${retryRes.status}`);
+          const retryData = await retryRes.json();
+          currentAssetVersion = typeof retryData.version === 'number' ? retryData.version : currentAssetVersion + 1;
+          window.history.replaceState(window.history.state, "", `${window.location.pathname}?id=${currentAssetId}`);
+          addLog('info', '✅ 保存成功（已解决版本冲突）', JSON.stringify(retryData, null, 2));
+          toast.success('工作流已保存', { description: '已解决版本冲突（采用最新状态）' });
+        } else {
+          throw new Error('无法获取最新版本号');
+        }
+        return;
+      }
       if (!res.ok) {
         const errBody = await res.json().catch(() => ({}));
         throw new Error(errBody.error || `HTTP ${res.status}`);
       }
       const savedData = await res.json();
       if (!currentAssetId) currentAssetId = savedData.id;
+      currentAssetVersion = typeof savedData.version === 'number' ? savedData.version : currentAssetVersion + 1;
 
       // 保存成功固化 URL 锚点：刷新后命中加载分支（行业惯例：保存即可复原）
       window.history.replaceState(window.history.state, "", `${window.location.pathname}?id=${currentAssetId}`);
@@ -341,12 +387,12 @@
       
       <div class="relative">
         <Button variant="outline" onclick={() => { showHistory = !showHistory; if (showHistory) fetchHistory(); }} class="bg-white">
-          历史记录
+          执行历史
         </Button>
         {#if showHistory}
           <div class="absolute top-full mt-2 left-0 w-64 bg-white border border-slate-200 shadow-xl rounded-lg max-h-64 overflow-y-auto z-50">
             {#if historyList.length === 0}
-              <div class="p-3 text-sm text-slate-500 text-center">暂无记录</div>
+              <div class="p-3 text-sm text-slate-500 text-center">暂无执行历史</div>
             {/if}
             {#each historyList as item}
               <button class="w-full text-left p-3 hover:bg-slate-50 border-b border-slate-100 last:border-0" onclick={() => loadTrace(item.workflowId)}>
