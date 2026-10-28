@@ -63,7 +63,7 @@
       </div>
     {:else}
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {#each assets as asset}
+        {#each assets.filter((a) => a?.manifest?.stages) as asset}
           <div 
             class="group bg-white rounded-xl border border-slate-200 p-5 hover:shadow-lg hover:border-slate-300 transition-all cursor-pointer flex flex-col"
             onclick={() => goto(`/?id=${asset.id}`)}
@@ -78,7 +78,7 @@
                 </div>
                 <div>
                   <h3 class="text-base font-semibold text-slate-900">{asset.name}</h3>
-                  <p class="text-xs text-slate-400">v{asset.version} · {asset.manifest.stages.length} 个阶段</p>
+                  <p class="text-xs text-slate-400">v{asset.version} · {asset.manifest?.stages?.length ?? 0} 个阶段</p>
                 </div>
               </div>
               <Button variant="ghost" size="icon" class="h-8 w-8 text-slate-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity" onclick={(e) => deleteAsset(asset.id, e)}>
@@ -87,7 +87,7 @@
             </div>
             
             <p class="text-sm text-slate-500 line-clamp-2 mb-4 flex-1">
-              {asset.manifest.description || '暂无描述'}
+              {asset.manifest?.description || '暂无描述'}
             </p>
 
             <div class="flex items-center justify-between text-xs text-slate-400 pt-4 border-t border-slate-100">

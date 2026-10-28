@@ -1,12 +1,13 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { SvelteFlowProvider } from '@xyflow/svelte';
-  import { Download, LayoutTemplate, Settings2, X, PanelLeftClose, PanelLeftOpen, Trash2, Info, Play, Activity } from 'lucide-svelte';
+  import { Download, LayoutTemplate, Settings2, X, PanelLeftClose, PanelLeftOpen, Trash2, Info, Play, Activity, FilePlus, FolderOpen } from 'lucide-svelte';
   import { Button } from '#lib/components/ui/button';
   import { Input } from '#lib/components/ui/input';
   import { Label } from '#lib/components/ui/label';
   import { toast } from 'svelte-sonner';
   import { page } from '$app/state';
+  import { goto } from '$app/navigation';
   import DebugPanel, { type LogEntry } from '#lib/components/DebugPanel.svelte';
   import CapabilitySelector from '#lib/components/CapabilitySelector.svelte';
   import FlowCanvas from '#lib/components/FlowCanvas.svelte';
@@ -17,8 +18,8 @@
   const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:3000';
 
   /** 本地草稿：画布快照持久化（修刷新空白；与服务端资产保存解耦） */
-  const DRAFT_KEY = "tda:studio:draft";
-  type StudioDraft = { version: 1; nodes: FlowNode[]; edges: FlowEdge[]; currentAssetId: string | null; savedAt: number };
+  const draftKeyFor = (id: string | null) => `tda:studio:draft:${id ?? 'new'}`;
+  type StudioDraft = { version: 1; nodes: FlowNode[]; edges: FlowEdge[]; currentAssetId: string | null; currentAssetVersion: number; name: string; savedAt: number };
 
   const STAGES_CONFIG = [
     { stage: 'context-gathering', label: 'Context Gathering', desc: '上下文收集', color: 'bg-blue-500' },
@@ -39,6 +40,16 @@
   let isConsoleOpen = $state(false);
   let logs = $state<LogEntry[]>([]);
   let currentAssetId = $state<string | null>(null);
+
+  /* ── 工作区身份模型：名称 + 脏态（行业基准: Docs/Figma/n8n 顶栏身份区） ── */
+  let currentAssetName = $state<string>('未命名工作流');
+  let savedSnap = $state<string>('');
+  let isDirty = $derived(
+    savedSnap !== '' && savedSnap !== JSON.stringify({ nodes, edges, name: currentAssetName })
+  );
+  function markClean() {
+    savedSnap = JSON.stringify({ nodes, edges, name: currentAssetName });
+  }
   let currentAssetVersion = $state<number>(1);   // 乐观锁版本号：加载时取，保存后更新，冲突时重取
   let historyList = $state<Array<{ workflowId: string; requirement: string; status: string; timestamp: number; iterations: number }>>([]);
   let showHistory = $state(false);
@@ -53,11 +64,11 @@
 
   $effect(() => {
     // 防抖落盘画布快照（400ms）：刷新/崩溃后可恢复
-    const snapshot: StudioDraft & { currentAssetVersion: number } = { version: 1, nodes, edges, currentAssetId, currentAssetVersion, savedAt: Date.now() };
+    const snapshot: StudioDraft = { version: 1, nodes, edges, currentAssetId, currentAssetVersion, name: currentAssetName, savedAt: Date.now() };
     clearTimeout(draftTimer);
     draftTimer = setTimeout(() => {
       try {
-        localStorage.setItem(DRAFT_KEY, JSON.stringify(snapshot));
+        localStorage.setItem(draftKeyFor(currentAssetId), JSON.stringify(snapshot));
       } catch {
         // 存储不可用（隐私模式/配额）：忽略，不影响主流程
       }
@@ -65,16 +76,19 @@
   });
 
   onMount(async () => {
-    // 草稿恢复优先：命中则复原画布；URL 带 ?id= 且与草稿不一致时以资产为准
+    // 草稿恢复：按资产作用域读取；URL 带 ?id= 且与草稿不一致时以资产为准
+    const id = page.url.searchParams.get('id');
     try {
-      const raw = localStorage.getItem(DRAFT_KEY);
+      const raw = localStorage.getItem(draftKeyFor(id));
       if (raw) {
         const draft = JSON.parse(raw) as StudioDraft;
         if (Array.isArray(draft.nodes) && draft.nodes.length > 0) {
           nodes = draft.nodes;
           edges = Array.isArray(draft.edges) ? draft.edges : [];
           currentAssetId = draft.currentAssetId ?? null;
-          currentAssetVersion = (draft as Record<string, unknown>).currentAssetVersion as number ?? 1;
+          const d = draft as Record<string, unknown>;
+          currentAssetVersion = typeof d.currentAssetVersion === 'number' ? d.currentAssetVersion : 1;
+          currentAssetName = typeof d.name === 'string' && d.name ? d.name : '未命名工作流';
           addLog("info", "已从本地草稿恢复画布", `节点 ${nodes.length} 个，边 ${edges.length} 条`);
         }
       }
@@ -82,7 +96,6 @@
       // 草稿损坏：忽略，走后续加载路径
     }
 
-    const id = page.url.searchParams.get('id');
     if (id && currentAssetId !== id) {
       try {
         const res = await fetch(`${API_BASE}/api/assets/${id}`);
@@ -90,6 +103,9 @@
           const asset = await res.json();
           currentAssetId = asset.id;
           currentAssetVersion = typeof asset.version === 'number' ? asset.version : 1;
+          // 名称双源兜底：优先 manifest.name（保存时同步），回落资产级 name
+          const nm = asset.manifest?.name ?? asset.name;
+          currentAssetName = typeof nm === 'string' && nm ? nm : '未命名工作流';
           nodes = Object.entries(asset.manifest.stageCapabilities).map(([stage, caps], index) => ({
             id: `node_${Date.now()}_${index}`,
             type: 'status',
@@ -101,12 +117,13 @@
               status: undefined,
             }
           }));
-          addLog('info', `已加载资产: ${asset.name}`);
+          addLog('info', `已加载资产: ${nm}`);
         }
       } catch {
         toast.error('加载失败');
       }
     }
+    markClean();
   });
 
   function addLog(type: 'info'|'error'|'warn', title: string, detail?: string, nodeId?: string) {
@@ -186,6 +203,26 @@
     setTimeout(() => ghost.remove(), 0);
   }
 
+  /** 新建工作流：清空画布并切换到'新建'草稿作用域（未保存先确认） */
+  function handleNewCanvas() {
+    if (isDirty && !window.confirm('当前画布有未保存更改，新建将丢弃这些更改。建议先保存。继续？')) return;
+    nodes = [];
+    edges = [];
+    selectedNode = null;
+    currentAssetId = null;
+    currentAssetVersion = 1;
+    currentAssetName = '未命名工作流';
+    window.history.replaceState(window.history.state, '', window.location.pathname);
+    markClean();
+    addLog('info', '已新建工作流', '画布已清空');
+    toast.success('已新建工作流');
+  }
+
+  /** 打开工作流列表（资产画廊） */
+  function handleOpenGallery() {
+    void goto('/gallery');
+  }
+
   async function fetchHistory() {
     try {
       const res = await fetch(`${API_BASE}/api/traces`);
@@ -204,13 +241,9 @@
       const trace: Array<{ action: string; detail: string; timestamp: number }> = Array.isArray(record.trace) ? record.trace : [];
       if (trace.length === 0) toast.warning("该记录无可回放的 Trace");
 
-      logs = trace.map((t: any) => ({
-        id: crypto.randomUUID(),
-        type: t.action === 'complete' ? 'info' : 'warn',
-        title: `[回放] ${t.action}`,
-        detail: t.detail,
-        timestamp: new Date(t.timestamp).toLocaleTimeString()
-      }));
+      // 执行历史不劫持控制台：控制台=操作日志（追加式），回放收敛为单条可展开记录
+      addLog('info', `已加载执行历史 ${workflowId}（${trace.length} 个事件）`,
+        trace.map((t) => `[${new Date(t.timestamp).toLocaleTimeString()}] ${t.action} → ${t.detail}`).join('\n'));
       
       nodes = nodes.map(n => {
         const hasEvent = trace.some((t: any) => t.detail === n.data.stage);
@@ -230,8 +263,9 @@
       toast.warning('画布为空，无法运行');
       return;
     }
-    await handleSave();
-    if (!currentAssetId) {
+    const saved = await handleSave();
+    if (!saved) {
+      // 保存失败但继续执行：明示未持久化（行业惯例: run 不强制 save 但透明）
       addLog('warn', '⚠ 画布未持久化', '保存失败，本次执行基于未保存的画布');
     }
     isRunning = true;
@@ -276,25 +310,25 @@
     }
   }
 
-  async function handleSave() {
+  async function handleSave(): Promise<boolean> {
     if (nodes.length === 0) {
       toast.warning('画布为空，无法保存');
-      return;
+      return false;
     }
     isSaving = true;
     addLog('info', '正在保存工作流...');
     try {
-      const plainManifest = mapNodesToManifest(nodes, currentAssetId);
+      const plainManifest = mapNodesToManifest(nodes, currentAssetId, currentAssetName);
       const url = currentAssetId ? `${API_BASE}/api/assets/${currentAssetId}` : `${API_BASE}/api/assets`;
       const method = currentAssetId ? 'PUT' : 'POST';
       const bodyData = method === 'PUT' ? { manifest: plainManifest, version: currentAssetVersion } : plainManifest;
-      
+
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(bodyData)
       });
-      
+
       // 乐观锁冲突：409 → 重取版本号 + 单次重试（last-write-wins with notification）
       if (res.status === 409 && method === 'PUT') {
         addLog('warn', '版本冲突', '检测到并发修改，正在用最新版本号重试保存...');
@@ -311,29 +345,44 @@
           const retryData = await retryRes.json();
           currentAssetVersion = typeof retryData.version === 'number' ? retryData.version : currentAssetVersion + 1;
           window.history.replaceState(window.history.state, "", `${window.location.pathname}?id=${currentAssetId}`);
+          markClean();
           addLog('info', '✅ 保存成功（已解决版本冲突）', JSON.stringify(retryData, null, 2));
           toast.success('工作流已保存', { description: '已解决版本冲突（采用最新状态）' });
-        } else {
-          throw new Error('无法获取最新版本号');
+          return true;
         }
-        return;
+        throw new Error('无法获取最新版本号');
       }
+
       if (!res.ok) {
         const errBody = await res.json().catch(() => ({}));
         throw new Error(errBody.error || `HTTP ${res.status}`);
       }
       const savedData = await res.json();
+      const isNewAsset = !currentAssetId;
       if (!currentAssetId) currentAssetId = savedData.id;
       currentAssetVersion = typeof savedData.version === 'number' ? savedData.version : currentAssetVersion + 1;
+      const nm = savedData.manifest?.name ?? savedData.name;
+      if (typeof nm === 'string' && nm) currentAssetName = nm;
 
       // 保存成功固化 URL 锚点：刷新后命中加载分支（行业惯例：保存即可复原）
       window.history.replaceState(window.history.state, "", `${window.location.pathname}?id=${currentAssetId}`);
-      
+      if (isNewAsset) {
+        // 资产已建立身份：清理'新建'作用域草稿，后续草稿归入资产作用域
+        try { localStorage.removeItem(draftKeyFor(null)); } catch {}
+      }
+      markClean();
       addLog('info', '✅ 工作流保存成功', JSON.stringify(savedData, null, 2));
       toast.success('工作流已保存');
+      return true;
     } catch (e: any) {
-      addLog('error', '保存失败', e.message);
-      toast.error(`保存失败: ${e.message}`);
+      // 错误分类：网络不可达 vs 后端业务错误，给可行动指引
+      const msg = String(e?.message ?? e);
+      const friendly = /Failed to fetch|NetworkError|ECONNREFUSED/i.test(msg)
+        ? `无法连接 API 服务（${API_BASE}），请确认服务已启动`
+        : msg;
+      addLog('error', '保存失败', friendly);
+      toast.error(`保存失败: ${friendly}`);
+      return false;
     } finally {
       isSaving = false;
     }
@@ -345,12 +394,12 @@
 <SvelteFlowProvider>
   <div
     class="flex w-screen h-screen bg-slate-50 font-sans text-slate-900 overflow-hidden relative"
-    style="--canvas-left: {isSidebarOpen ? '16rem' : '0px'}; --canvas-right: {selectedNode ? '20rem' : '0px'}; --canvas-bottom: {isConsoleOpen ? '20.75rem' : '2.75rem'};"
+    style="--topbar-h: 3.5rem; --canvas-left: {isSidebarOpen ? '16rem' : '0px'}; --canvas-right: {selectedNode ? '20rem' : '0px'}; --canvas-bottom: {isConsoleOpen ? '20.75rem' : '2.75rem'};"
   >
     <FlowCanvas bind:nodes bind:edges {addLog} registerZoomGetter={registerZoomGetter} onSelectNode={(n: FlowNode | null) => selectedNode = n} />
     
     <!-- 左侧组件库 -->
-    <aside class="absolute top-0 left-0 h-full w-64 bg-white border-r border-slate-200 shadow-[4px_0_24px_rgba(0,0,0,0.02)] z-20 flex flex-col transition-transform duration-300 ease-in-out" style="transform: translateX({isSidebarOpen ? '0%' : '-100%'})">
+    <aside class="absolute left-0 w-64 bg-white border-r border-slate-200 shadow-[4px_0_24px_rgba(0,0,0,0.02)] z-20 flex flex-col transition-transform duration-300 ease-in-out" style="top: var(--topbar-h); bottom: 0; transform: translateX({isSidebarOpen ? '0%' : '-100%'})">
       <div class="h-14 flex items-center justify-between px-4 border-b border-slate-100 shrink-0">
         <div class="flex items-center gap-2">
           <LayoutTemplate size={18} class="text-slate-500" />
@@ -371,7 +420,7 @@
       </div>
     </aside>
 
-    <div class="absolute top-4 left-4 z-30 transition-opacity duration-300" style="opacity: {isSidebarOpen ? '0' : '1'}; pointer-events: {isSidebarOpen ? 'none' : 'auto'};">
+    <div class="absolute left-4 z-30 transition-opacity duration-300" style="top: calc(var(--topbar-h) + 1rem); opacity: {isSidebarOpen ? '0' : '1'}; pointer-events: {isSidebarOpen ? 'none' : 'auto'};">
       <div class="bg-white/90 backdrop-blur-md shadow-sm rounded-lg border border-slate-200/60 p-1">
         <Button variant="ghost" size="icon" class="h-8 w-8 text-slate-600" onclick={() => isSidebarOpen = true}>
           <PanelLeftOpen size={16} />
@@ -379,46 +428,79 @@
       </div>
     </div>
 
-    <div class="absolute top-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 px-2 py-1.5 bg-white/90 backdrop-blur-md shadow-sm rounded-lg border border-slate-200/60">
-      <Button onclick={handleSave} disabled={isSaving || isRunning} variant="outline" class="bg-white hover:bg-slate-50 text-slate-700 shadow-sm">
-        <Download size={16} class="mr-2" />
-        {isSaving ? '保存中...' : '保存'}
+    <!-- 顶栏三段式（行业基准: Docs/Figma/n8n）：入口+身份 / 状态 / 动作 -->
+    <div class="absolute top-0 left-0 right-0 z-40 h-14 flex items-center gap-2 px-4 bg-white/90 backdrop-blur-md border-b border-slate-200">
+      <!-- 左段：入口 + 身份 -->
+      <Button variant="ghost" size="icon" class="h-8 w-8 text-slate-600" title="新建工作流" aria-label="新建工作流" onclick={handleNewCanvas}>
+        <FilePlus size={16} />
       </Button>
-      
-      <div class="relative">
-        <Button variant="outline" onclick={() => { showHistory = !showHistory; if (showHistory) fetchHistory(); }} class="bg-white">
-          执行历史
-        </Button>
-        {#if showHistory}
-          <div class="absolute top-full mt-2 left-0 w-64 bg-white border border-slate-200 shadow-xl rounded-lg max-h-64 overflow-y-auto z-50">
-            {#if historyList.length === 0}
-              <div class="p-3 text-sm text-slate-500 text-center">暂无执行历史</div>
-            {/if}
-            {#each historyList as item}
-              <button class="w-full text-left p-3 hover:bg-slate-50 border-b border-slate-100 last:border-0" onclick={() => loadTrace(item.workflowId)}>
-                <div class="text-sm font-medium text-slate-700 truncate">{item.requirement}</div>
-                <div class="text-xs text-slate-400 mt-1 flex justify-between">
-                  <span>{new Date(item.timestamp).toLocaleString()}</span>
-                  <span class="text-green-600">{item.status}</span>
-                </div>
-              </button>
-            {/each}
-          </div>
-        {/if}
-      </div>
+      <Button variant="ghost" size="icon" class="h-8 w-8 text-slate-600" title="打开工作流" aria-label="打开工作流" onclick={handleOpenGallery}>
+        <FolderOpen size={16} />
+      </Button>
+      <div class="w-px h-6 bg-slate-200 mx-1"></div>
+      <input
+        type="text"
+        bind:value={currentAssetName}
+        aria-label="工作流名称"
+        placeholder="工作流名称"
+        class="w-44 px-2 py-1 text-sm font-medium text-slate-800 bg-transparent border border-transparent hover:border-slate-200 focus:border-slate-300 focus:outline-none rounded"
+      />
+      {#if isDirty}
+        <span class="flex items-center gap-1 text-xs text-amber-600 whitespace-nowrap" title="有未保存更改">
+          <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>未保存
+        </span>
+      {:else if currentAssetId}
+        <span class="flex items-center gap-1 text-xs text-slate-400 whitespace-nowrap" title="已保存">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>已保存
+        </span>
+      {:else}
+        <span class="flex items-center gap-1 text-xs text-slate-400 whitespace-nowrap" title="尚未保存到服务端">
+          <span class="w-1.5 h-1.5 rounded-full bg-slate-300"></span>本地草稿
+        </span>
+      {/if}
 
-      <Button onclick={handleRun} disabled={isRunning} class="bg-blue-600 hover:bg-blue-700 text-white shadow-sm min-w-[120px]">
-        {#if isRunning}
-          <Activity size={16} class="mr-2 animate-pulse" />
-          执行中...
-        {:else}
-          <Play size={16} class="mr-2" />
-          运行工作流
-        {/if}
-      </Button>
+      <!-- 右段：动作（重要性递增：查看 → 执行 → 保存落定） -->
+      <div class="ml-auto flex items-center gap-2">
+        <div class="relative">
+          <Button variant="outline" onclick={() => { showHistory = !showHistory; if (showHistory) fetchHistory(); }} class="bg-white">
+            执行历史
+          </Button>
+          {#if showHistory}
+            <div class="absolute top-full mt-2 right-0 w-64 bg-white border border-slate-200 shadow-xl rounded-lg max-h-64 overflow-y-auto z-50">
+              {#if historyList.length === 0}
+                <div class="p-3 text-sm text-slate-500 text-center">暂无执行历史</div>
+              {/if}
+              {#each historyList as item}
+                <button class="w-full text-left p-3 hover:bg-slate-50 border-b border-slate-100 last:border-0" onclick={() => loadTrace(item.workflowId)}>
+                  <div class="text-sm font-medium text-slate-700 truncate">{item.requirement}</div>
+                  <div class="text-xs text-slate-400 mt-1 flex justify-between">
+                    <span>{new Date(item.timestamp).toLocaleString()}</span>
+                    <span class="text-green-600">{item.status}</span>
+                  </div>
+                </button>
+              {/each}
+            </div>
+          {/if}
+        </div>
+
+        <Button onclick={handleRun} disabled={isRunning} class="bg-blue-600 hover:bg-blue-700 text-white shadow-sm min-w-[120px]">
+          {#if isRunning}
+            <Activity size={16} class="mr-2 animate-pulse" />
+            执行中...
+          {:else}
+            <Play size={16} class="mr-2" />
+            运行工作流
+          {/if}
+        </Button>
+
+        <Button onclick={handleSave} disabled={isSaving || isRunning} variant="outline" class="bg-white hover:bg-slate-50 text-slate-700 shadow-sm">
+          <Download size={16} class="mr-2" />
+          {isSaving ? '保存中...' : '保存'}
+        </Button>
+      </div>
     </div>
 
-    <aside class="absolute top-0 right-0 h-full w-80 bg-white border-l border-slate-200 shadow-[-4px_0_24px_rgba(0,0,0,0.02)] z-20 flex flex-col transition-transform duration-300 ease-in-out" style="transform: translateX({selectedNode ? '0%' : '100%'})">
+    <aside class="absolute right-0 w-80 bg-white border-l border-slate-200 shadow-[-4px_0_24px_rgba(0,0,0,0.02)] z-20 flex flex-col transition-transform duration-300 ease-in-out" style="top: var(--topbar-h); bottom: 0; transform: translateX({selectedNode ? '0%' : '100%'})">
       <div class="h-14 flex items-center justify-between px-4 border-b border-slate-100 shrink-0">
         <div class="flex items-center gap-2">
           <Settings2 size={18} class="text-slate-500" />

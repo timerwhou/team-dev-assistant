@@ -92,8 +92,8 @@
      无障碍能力承担（nodesFocusable 默认开启：Tab 循环节点、Enter 选中），
      不在非交互元素上挂鼠标/键盘事件。 -->
 <div
-  class="absolute top-0 bg-slate-50 transition-all duration-300 ease-in-out"
-  style="left: var(--canvas-left, 0px); right: var(--canvas-right, 0px); bottom: var(--canvas-bottom, 2.75rem);"
+  class="absolute bg-slate-50 transition-all duration-300 ease-in-out"
+  style="top: var(--topbar-h, 3.5rem); left: var(--canvas-left, 0px); right: var(--canvas-right, 0px); bottom: var(--canvas-bottom, 2.75rem);"
   role="region"
   aria-label="工作流编排画布，从左侧拖入组件开始编排"
   ondrop={onDrop}
