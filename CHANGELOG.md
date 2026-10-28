@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.15.0](https://github.com/timerwhou/team-dev-assistant/compare/v1.14.0...v1.15.0) (2026-10-28)
+
+
+### Features
+
+* **studio:** 工作区身份模型与交互体验——全宽顶栏、草稿持久化、保存契约修复、CORS 根治 ([#209](https://github.com/timerwhou/team-dev-assistant/issues/209)) ([2fea96a](https://github.com/timerwhou/team-dev-assistant/commit/2fea96a004b3ecc0434b26601b7630864075c1a4))
+
+
+### Bug Fixes
+
+* **studio:** Toaster 偏移下移避开顶栏（4.25rem=顶栏3.5rem+间距） ([#212](https://github.com/timerwhou/team-dev-assistant/issues/212)) ([ca89c75](https://github.com/timerwhou/team-dev-assistant/commit/ca89c75cc46b26eb9257dc367d15f3d7245af38a))
+
 ## [1.14.0](https://github.com/timerwhou/team-dev-assistant/compare/v1.13.1...v1.14.0) (2026-10-27)
 
 
