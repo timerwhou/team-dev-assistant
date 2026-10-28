@@ -10,15 +10,25 @@
     nodes = $bindable<FlowNode[]>([]),
     edges = $bindable<FlowEdge[]>([]),
     addLog,
-    onSelectNode
+    onSelectNode,
+    registerZoomGetter
   }: {
     nodes: FlowNode[];
     edges: FlowEdge[];
     addLog: AddLogFn;
     onSelectNode: (node: FlowNode | null) => void;
+    registerZoomGetter?: (fn: () => number) => void;
   } = $props();
 
   const flow = useSvelteFlow();
+
+  // 拖拽幽灵按画布缩放渲染：向页面注册缩放读取器（getViewport 可用则读取，否则回退 1）
+  function currentZoom(): number {
+    const f = flow as unknown as { getViewport?: () => { zoom: number } };
+    const vp = f.getViewport?.();
+    return vp ? vp.zoom : 1;
+  }
+  registerZoomGetter?.(currentZoom);
 
   // 注册自定义节点类型
   const nodeTypes: NodeTypes = {
@@ -38,7 +48,19 @@
     const stageConfig = STAGES_CONFIG.find(s => s.stage === stageId);
     if (!stageConfig) return;
 
-    const position = flow.screenToFlowPosition({ x: event.clientX, y: event.clientY });
+    const cursor = flow.screenToFlowPosition({ x: event.clientX, y: event.clientY });
+    let position = cursor;
+    const ghostRaw = event.dataTransfer?.getData('application/studio-ghost');
+    if (ghostRaw) {
+      try {
+        const g = JSON.parse(ghostRaw) as { w: number; h: number; zoom: number };
+        const z = g.zoom || 1;
+        // 幽灵居中于光标 → 节点同规格居中落点（w/h 为屏幕像素，除以 zoom 得画布单位半径）
+        position = { x: cursor.x - g.w / z / 2, y: cursor.y - g.h / z / 2 };
+      } catch {
+        // 幽灵信息不可用：回退光标落点
+      }
+    }
     const count = nodes.filter(n => n.data.stage === stageId).length;
     const newNode: FlowNode = {
       id: `node_${Date.now()}`,
@@ -70,7 +92,8 @@
      无障碍能力承担（nodesFocusable 默认开启：Tab 循环节点、Enter 选中），
      不在非交互元素上挂鼠标/键盘事件。 -->
 <div
-  class="absolute inset-0 bg-slate-50"
+  class="absolute top-0 bg-slate-50 transition-all duration-300 ease-in-out"
+  style="left: var(--canvas-left, 0px); right: var(--canvas-right, 0px); bottom: var(--canvas-bottom, 2.75rem);"
   role="region"
   aria-label="工作流编排画布，从左侧拖入组件开始编排"
   ondrop={onDrop}

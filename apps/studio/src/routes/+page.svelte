@@ -42,6 +42,12 @@
   let historyList = $state<Array<{ workflowId: string; requirement: string; status: string; timestamp: number; iterations: number }>>([]);
   let showHistory = $state(false);
 
+  // 拖拽缩放读取器（FlowCanvas 注册，供拖拽幽灵按画布缩放渲染）
+  let getZoomFn: (() => number) | null = null;
+  function registerZoomGetter(fn: () => number) {
+    getZoomFn = fn;
+  }
+
   let draftTimer: ReturnType<typeof setTimeout> | undefined;
 
   $effect(() => {
@@ -129,6 +135,36 @@
       event.preventDefault();
       deleteSelectedNode();
     }
+  }
+
+  /** 拖拽幽灵：节点样式克隆 × 画布缩放，居中于光标——拖动中与松手后视觉一致 */
+  function handleStageDragStart(e: DragEvent, stage: (typeof STAGES_CONFIG)[number]) {
+    const dt = e.dataTransfer;
+    if (!dt) return;
+    dt.setData("application/studio-stage", stage.stage);
+    dt.effectAllowed = "copy";
+
+    const count = nodes.filter((n) => n.data.stage === stage.stage).length;
+    const label = `${stage.desc} ${count + 1}`;
+
+    const ghost = document.createElement("div");
+    ghost.className = "absolute left-[-9999px] top-0 px-6 py-3 bg-white border-2 border-slate-200 rounded-lg shadow-sm";
+    const span = document.createElement("span");
+    span.className = "text-sm font-medium text-slate-700 whitespace-nowrap";
+    span.textContent = label;
+    ghost.appendChild(span);
+    document.body.appendChild(ghost);
+
+    const zoom = getZoomFn?.() ?? 1;
+    if (zoom !== 1) ghost.style.setProperty("zoom", String(zoom));
+
+    const w = ghost.offsetWidth;
+    const h = ghost.offsetHeight;
+    dt.setDragImage(ghost, Math.round(w / 2), Math.round(h / 2));
+    dt.setData("application/studio-ghost", JSON.stringify({ w, h, zoom }));
+
+    // dragstart 返回后浏览器已完成快照，异步移除幽灵
+    setTimeout(() => ghost.remove(), 0);
   }
 
   async function fetchHistory() {
@@ -261,8 +297,11 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <SvelteFlowProvider>
-  <div class="flex w-screen h-screen bg-slate-50 font-sans text-slate-900 overflow-hidden relative">
-    <FlowCanvas bind:nodes bind:edges {addLog} onSelectNode={(n: FlowNode | null) => selectedNode = n} />
+  <div
+    class="flex w-screen h-screen bg-slate-50 font-sans text-slate-900 overflow-hidden relative"
+    style="--canvas-left: {isSidebarOpen ? '16rem' : '0px'}; --canvas-right: {selectedNode ? '20rem' : '0px'}; --canvas-bottom: {isConsoleOpen ? '20.75rem' : '2.75rem'};"
+  >
+    <FlowCanvas bind:nodes bind:edges {addLog} registerZoomGetter={registerZoomGetter} onSelectNode={(n: FlowNode | null) => selectedNode = n} />
     
     <!-- 左侧组件库 -->
     <aside class="absolute top-0 left-0 h-full w-64 bg-white border-r border-slate-200 shadow-[4px_0_24px_rgba(0,0,0,0.02)] z-20 flex flex-col transition-transform duration-300 ease-in-out" style="transform: translateX({isSidebarOpen ? '0%' : '-100%'})">
@@ -278,7 +317,7 @@
       <div class="p-4 flex-1 overflow-y-auto space-y-3">
         <div class="text-xs font-medium text-slate-400 mb-2 uppercase tracking-wider">基础阶段 (Stages)</div>
         {#each STAGES_CONFIG as stage}
-          <div role="button" tabindex="0" draggable="true" ondragstart={(e) => e.dataTransfer?.setData('application/studio-stage', stage.stage)} class="group flex items-center p-3 bg-white border border-slate-200 rounded-lg cursor-grab active:cursor-grabbing hover:border-slate-400 hover:shadow-md transition-all">
+          <div role="button" tabindex="0" draggable="true" ondragstart={(e) => handleStageDragStart(e, stage)} class="group flex items-center p-3 bg-white border border-slate-200 rounded-lg cursor-grab active:cursor-grabbing hover:border-slate-400 hover:shadow-md transition-all">
             <div class="w-2 h-2 rounded-full {stage.color} mr-3 group-hover:scale-125 transition-transform"></div>
             <div><div class="text-sm font-medium text-slate-700">{stage.label}</div><div class="text-xs text-slate-400 mt-0.5">{stage.desc}</div></div>
           </div>
