@@ -15,7 +15,8 @@ export function cn(...inputs: ClassValue[]) {
 
 export function mapNodesToManifest(
   nodes: FlowNode[],
-  assetId?: string | null
+  assetId?: string | null,
+  name?: string
 ): WorkflowManifest {
   const stagesSet = new Set<string>();
   const capsMap: Record<string, Set<string>> = {};
@@ -43,7 +44,7 @@ export function mapNodesToManifest(
   }];
 
   return {
-    name: assetId ? "loaded-workflow" : `studio-workflow-${Date.now()}`,
+    name: name ?? (assetId ? "loaded-workflow" : `studio-workflow-${Date.now()}`),
     description: "Studio 生成的工作流",
     stages,
     stageCapabilities,

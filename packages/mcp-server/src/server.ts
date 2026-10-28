@@ -113,6 +113,18 @@ export function startHttpServer(port = parseInt(process.env.MCP_HTTP_PORT || "30
   const useOAuth = !!process.env.OAUTH_ISSUER;
 
   const httpServer = createServer(async (req: IncomingMessage, res: ServerResponse) => {
+  /* TDA-CORS-MW v1: 统一跨源策略（浏览器前端 → API 跨源必需）+ 预检收口 */
+  const CORS_ORIGIN = process.env.CORS_ORIGIN ?? "*";
+  res.setHeader("Access-Control-Allow-Origin", CORS_ORIGIN);
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  if (req.method === "OPTIONS") {
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
+
     // 🌟 Webhook 拦截（必须在所有业务路由之前）
     if (await handleWebhook(req, res)) return;
 
@@ -264,8 +276,13 @@ export function startHttpServer(port = parseInt(process.env.MCP_HTTP_PORT || "30
         traceBus.publish(workflowId, evt);
         
         // 🌟 将完整 Trace 落盘
-        const store = new MemoryStore();
-        store.recordTrace(workflowId, "Studio Mock Execution", mockTrace, 1, "completed");
+        try {
+          const store = new MemoryStore();
+          store.recordTrace(workflowId, "Studio Mock Execution", mockTrace, 1, "completed");
+        } catch (e) {
+          // 后台定时器异常防护：未捕获异常会杀死进程，SSE 完成事件已发出不受影响
+          console.error("recordTrace 失败:", e);
+        }
       }, 4000);
 
       return;
@@ -318,7 +335,12 @@ export function startHttpServer(port = parseInt(process.env.MCP_HTTP_PORT || "30
       // 列出所有资产
       if (req.url === "/api/assets" && req.method === "GET") {
         res.writeHead(200, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" });
-        res.end(JSON.stringify(store.listAssets()));
+        const allAssets = store.listAssets();
+        const renderable = allAssets.filter((a) => a?.id && a?.manifest?.stages);
+        if (renderable.length !== allAssets.length) {
+          console.warn(`[assets] 跳过 ${allAssets.length - renderable.length} 条结构异常记录（无 id/manifest/stages）`);
+        }
+        res.end(JSON.stringify(renderable));
         return;
       }
 
@@ -440,8 +462,13 @@ export function startHttpServer(port = parseInt(process.env.MCP_HTTP_PORT || "30
         mockTrace.push(evt);
         traceBus.publish(workflowId, evt);
         
-        const store = new MemoryStore();
-        store.recordTrace(workflowId, "Studio Mock Execution", mockTrace, 1, "completed");
+        try {
+          const store = new MemoryStore();
+          store.recordTrace(workflowId, "Studio Mock Execution", mockTrace, 1, "completed");
+        } catch (e) {
+          // 后台定时器异常防护：未捕获异常会杀死进程，SSE 完成事件已发出不受影响
+          console.error("recordTrace 失败:", e);
+        }
       }, 4000);
 
       return;
