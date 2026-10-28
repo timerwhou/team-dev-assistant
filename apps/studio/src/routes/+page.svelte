@@ -142,7 +142,7 @@
     const dt = e.dataTransfer;
     if (!dt) return;
     dt.setData("application/studio-stage", stage.stage);
-    dt.effectAllowed = "copy";
+    dt.effectAllowed = "copyMove";
 
     const count = nodes.filter((n) => n.data.stage === stage.stage).length;
     const label = `${stage.desc} ${count + 1}`;
