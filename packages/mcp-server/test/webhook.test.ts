@@ -4,6 +4,9 @@ import crypto from "node:crypto";
 import { startHttpServer } from "../src/server";
 import { WorkflowStore } from "../src/workflow-store";
 import { resolveTenantContext } from "../src/tenant";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 
 describe("Webhook 触发与 HMAC 验签测试", () => {
   let server: any;
@@ -14,6 +17,9 @@ describe("Webhook 触发与 HMAC 验签测试", () => {
 
   before(async () => {
     process.env.MCP_TRANSPORT = "http";
+    // 测试隔离: 数据写入临时目录（MCP_ROOT 接线，对齐 multi-tenant.test.ts 参考实现）
+    // 必须在 resolveTenantContext/createAsset 之前设置
+    process.env.MCP_ROOT = fs.mkdtempSync(path.join(os.tmpdir(), "tda-test-"));
     
     // 1. 预先创建带 trigger 的工作流资产
     const ctx = resolveTenantContext("default-tenant");
@@ -31,6 +37,9 @@ describe("Webhook 触发与 HMAC 验签测试", () => {
 
   after(() => {
     if (server) server.close();
+    // 测试隔离: 清理临时数据目录（防泄漏）
+    const tmpRoot = process.env.MCP_ROOT;
+    if (tmpRoot && tmpRoot.includes("tda-test-")) fs.rmSync(tmpRoot, { recursive: true, force: true });
   });
 
   test("缺少签名时应返回 401", async () => {
