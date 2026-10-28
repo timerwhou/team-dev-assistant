@@ -16,6 +16,10 @@
 
   const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:3000';
 
+  /** 本地草稿：画布快照持久化（修刷新空白；与服务端资产保存解耦） */
+  const DRAFT_KEY = "tda:studio:draft";
+  type StudioDraft = { version: 1; nodes: FlowNode[]; edges: FlowEdge[]; currentAssetId: string | null; savedAt: number };
+
   const STAGES_CONFIG = [
     { stage: 'context-gathering', label: 'Context Gathering', desc: '上下文收集', color: 'bg-blue-500' },
     { stage: 'execution', label: 'Execution', desc: '执行阶段', color: 'bg-green-500' },
@@ -38,9 +42,40 @@
   let historyList = $state<Array<{ workflowId: string; requirement: string; status: string; timestamp: number; iterations: number }>>([]);
   let showHistory = $state(false);
 
+  let draftTimer: ReturnType<typeof setTimeout> | undefined;
+
+  $effect(() => {
+    // 防抖落盘画布快照（400ms）：刷新/崩溃后可恢复
+    const snapshot: StudioDraft = { version: 1, nodes, edges, currentAssetId, savedAt: Date.now() };
+    clearTimeout(draftTimer);
+    draftTimer = setTimeout(() => {
+      try {
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(snapshot));
+      } catch {
+        // 存储不可用（隐私模式/配额）：忽略，不影响主流程
+      }
+    }, 400);
+  });
+
   onMount(async () => {
+    // 草稿恢复优先：命中则复原画布；URL 带 ?id= 且与草稿不一致时以资产为准
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (raw) {
+        const draft = JSON.parse(raw) as StudioDraft;
+        if (Array.isArray(draft.nodes) && draft.nodes.length > 0) {
+          nodes = draft.nodes;
+          edges = Array.isArray(draft.edges) ? draft.edges : [];
+          currentAssetId = draft.currentAssetId ?? null;
+          addLog("info", "已从本地草稿恢复画布", `节点 ${nodes.length} 个，边 ${edges.length} 条`);
+        }
+      }
+    } catch {
+      // 草稿损坏：忽略，走后续加载路径
+    }
+
     const id = page.url.searchParams.get('id');
-    if (id) {
+    if (id && currentAssetId !== id) {
       try {
         const res = await fetch(`${API_BASE}/api/assets/${id}`);
         if (res.ok) {
@@ -111,7 +146,10 @@
       if (!res.ok) throw new Error('未找到该记录');
       const record = await res.json();
       
-      logs = record.trace.map((t: any) => ({
+      const trace: Array<{ action: string; detail: string; timestamp: number }> = Array.isArray(record.trace) ? record.trace : [];
+      if (trace.length === 0) toast.warning("该记录无可回放的 Trace");
+
+      logs = trace.map((t: any) => ({
         id: crypto.randomUUID(),
         type: t.action === 'complete' ? 'info' : 'warn',
         title: `[回放] ${t.action}`,
@@ -120,7 +158,7 @@
       }));
       
       nodes = nodes.map(n => {
-        const hasEvent = record.trace.some((t: any) => t.detail === n.data.stage);
+        const hasEvent = trace.some((t: any) => t.detail === n.data.stage);
         return { ...n, data: { ...n.data, status: hasEvent ? 'completed' : undefined } };
       });
       
@@ -205,6 +243,9 @@
       }
       const savedData = await res.json();
       if (!currentAssetId) currentAssetId = savedData.id;
+
+      // 保存成功固化 URL 锚点：刷新后命中加载分支（行业惯例：保存即可复原）
+      window.history.replaceState(window.history.state, "", `${window.location.pathname}?id=${currentAssetId}`);
       
       addLog('info', '✅ 工作流保存成功', JSON.stringify(savedData, null, 2));
       toast.success('工作流已保存');
